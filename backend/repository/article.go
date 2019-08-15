@@ -9,7 +9,33 @@ import (
 
 func AllArticle(db *sqlx.DB) ([]model.Article, error) {
 	a := make([]model.Article, 0)
-	if err := db.Select(&a, `SELECT id, title, body FROM article`); err != nil {
+	if err := db.Select(&a, `SELECT id, title, body, user_id FROM article`); err != nil {
+		return nil, err
+	}
+	return a, nil
+}
+
+// func SearchArticle(db *sqlx.DB, tag string) ([]model.Article, error) {
+// 	a := make([]model.Article, 0)
+// 	if err := db.Select(&a, `SELECT id, title, body, user_id, tag FROM article  WHERE tag= ?`, tag); err != nil {
+// 		return nil, err
+// 	}
+// 	return a, nil
+// }
+
+func SearchArticle(db *sqlx.DB, tag string) ([]model.Article, error) {
+	a := make([]model.Article, 0)
+	if err := db.Select(&a,
+		` SELECT
+				article.id, title, body, user_id, article.tag
+			FROM
+				article
+					INNER JOIN
+						article_tag
+						ON
+							article.id = article_tag.article_id
+			WHERE
+				article_tag.tag= ? `, tag); err != nil {
 		return nil, err
 	}
 	return a, nil
@@ -27,13 +53,13 @@ SELECT id, title, body FROM article WHERE id = ?
 
 func CreateArticle(db *sqlx.Tx, a *model.Article) (sql.Result, error) {
 	stmt, err := db.Prepare(`
-INSERT INTO article (title, body) VALUES (?, ?)
+INSERT INTO article (user_id, title, body, tag) VALUES (?, ?, ?, ?)
 `)
 	if err != nil {
 		return nil, err
 	}
 	defer stmt.Close()
-	return stmt.Exec(a.Title, a.Body)
+	return stmt.Exec(a.UserID, a.Title, a.Body, a.Tag)
 }
 
 func UpdateArticle(db *sqlx.Tx, id int64, a *model.Article) (sql.Result, error) {
@@ -56,4 +82,26 @@ DELETE FROM article WHERE id = ?
 	}
 	defer stmt.Close()
 	return stmt.Exec(id)
+}
+
+func CreateArticleComment(db *sqlx.Tx, a *model.ArticleComment) (sql.Result, error) {
+	stmt, err := db.Prepare(`
+INSERT INTO article_comment (user_id, article_id, body) VALUES (?, ?, ?)
+`)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+	return stmt.Exec(a.UserID, a.ArticleID, a.Body)
+}
+
+func CreateArticleTag(db *sqlx.Tx, a *model.ArticleTag) (sql.Result, error) {
+	stmt, err := db.Prepare(`
+INSERT INTO article_tag (article_id, tag) VALUES (?, ?)
+`)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+	return stmt.Exec(a.ArticleID, a.Tag)
 }

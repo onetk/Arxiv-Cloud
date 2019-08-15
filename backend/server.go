@@ -23,7 +23,7 @@ import (
 )
 
 type Server struct {
-	db         *sqlx.DB
+	dbx        *sqlx.DB
 	router     *mux.Router
 	authClient *auth.Client
 }
@@ -40,11 +40,11 @@ func (s *Server) Init(datasource string) {
 	s.authClient = authClient
 
 	db := db2.NewDB(datasource)
-	dbcon, err := db.Open()
+	dbx, err := db.Open()
 	if err != nil {
 		log.Fatalf("failed db init. %s", err)
 	}
-	s.db = dbcon
+	s.dbx = dbx
 	s.router = s.Route()
 }
 
@@ -59,11 +59,18 @@ func (s *Server) Run(addr string) {
 	}
 }
 
+// func (s *Server) Route() *mux.Router {
+// 	authMiddleware := middleware.NewAuthMiddleware(s.authClient, s.dbx)
+// 	corsMiddleware := cors.New(cors.Options{
+// 		AllowedOrigins: []string{"*"},
+// 		AllowedHeaders: []string{"Authorization"},
+// 	})
 func (s *Server) Route() *mux.Router {
-	authMiddleware := middleware.NewAuth(s.authClient, s.db)
+	authMiddleware := middleware.NewAuth(s.authClient, s.dbx)
 	corsMiddleware := cors.New(cors.Options{
 		AllowedOrigins: []string{"*"},
-		AllowedHeaders: []string{"Authorization"},
+		AllowedHeaders: []string{"Authorization", "Content-Type"},
+		AllowedMethods: []string{"GET", "POST", "DELETE", "PUT", "Head"},
 	})
 
 	commonChain := alice.New(
@@ -77,14 +84,21 @@ func (s *Server) Route() *mux.Router {
 
 	r := mux.NewRouter()
 	r.Methods(http.MethodGet).Path("/public").Handler(commonChain.Then(sample.NewPublicHandler()))
-	r.Methods(http.MethodGet).Path("/private").Handler(authChain.Then(sample.NewPrivateHandler(s.db)))
+	r.Methods(http.MethodGet).Path("/private").Handler(authChain.Then(sample.NewPrivateHandler(s.dbx)))
 
-	articleController := controller.NewArticle(s.db)
+	articleController := controller.NewArticle(s.dbx)
 	r.Methods(http.MethodPost).Path("/articles").Handler(authChain.Then(AppHandler{articleController.Create}))
 	r.Methods(http.MethodPut).Path("/articles/{id}").Handler(authChain.Then(AppHandler{articleController.Update}))
 	r.Methods(http.MethodDelete).Path("/articles/{id}").Handler(authChain.Then(AppHandler{articleController.Destroy}))
 	r.Methods(http.MethodGet).Path("/articles").Handler(commonChain.Then(AppHandler{articleController.Index}))
 	r.Methods(http.MethodGet).Path("/articles/{id}").Handler(commonChain.Then(AppHandler{articleController.Show}))
+	r.Methods(http.MethodGet).Path("/articles/search/{tag}").Handler(commonChain.Then(AppHandler{articleController.SearchIndex}))
+
+	articleCommentController := controller.NewArticleComment(s.dbx)
+	r.Methods(http.MethodPost).Path("/articles/{article_id}/comments").Handler(authChain.Then(AppHandler{articleCommentController.CreateArticleComment}))
+
+	articleTagController := controller.NewArticleTag(s.dbx)
+	r.Methods(http.MethodPost).Path("/articles/tag/{article_id}").Handler(authChain.Then(AppHandler{articleTagController.CreateArticleTag}))
 
 	r.PathPrefix("").Handler(commonChain.Then(http.StripPrefix("/img", http.FileServer(http.Dir("./img")))))
 	return r

@@ -13,8 +13,24 @@ type Article struct {
 	db *sqlx.DB
 }
 
-func NewArticle(db *sqlx.DB) *Article {
+func NewArticleService(db *sqlx.DB) *Article {
 	return &Article{db}
+}
+
+type ArticleComment struct {
+	db *sqlx.DB
+}
+
+type ArticleTag struct {
+	db *sqlx.DB
+}
+
+func NewArticleCommentService(db *sqlx.DB) *ArticleComment {
+	return &ArticleComment{db}
+}
+
+func NewArticleTagService(db *sqlx.DB) *ArticleTag {
+	return &ArticleTag{db}
 }
 
 func (a *Article) Update(id int64, newArticle *model.Article) error {
@@ -63,6 +79,50 @@ func (a *Article) Create(newArticle *model.Article) (int64, error) {
 	var createdId int64
 	if err := dbutil.TXHandler(a.db, func(tx *sqlx.Tx) error {
 		result, err := repository.CreateArticle(tx, newArticle)
+		if err != nil {
+			return err
+		}
+		if err := tx.Commit(); err != nil {
+			return err
+		}
+		id, err := result.LastInsertId()
+		if err != nil {
+			return err
+		}
+		createdId = id
+		return err
+	}); err != nil {
+		return 0, errors.Wrap(err, "failed article insert transaction")
+	}
+	return createdId, nil
+}
+
+func (a *ArticleComment) CreateArticleComment(newArticleComment *model.ArticleComment) (int64, error) {
+	var createdId int64
+	if err := dbutil.TXHandler(a.db, func(tx *sqlx.Tx) error {
+		result, err := repository.CreateArticleComment(tx, newArticleComment)
+		if err != nil {
+			return err
+		}
+		if err := tx.Commit(); err != nil {
+			return err
+		}
+		id, err := result.LastInsertId()
+		if err != nil {
+			return err
+		}
+		createdId = id
+		return err
+	}); err != nil {
+		return 0, errors.Wrap(err, "failed article insert transaction")
+	}
+	return createdId, nil
+}
+
+func (a *ArticleTag) CreateArticleTag(newArticleTag *model.ArticleTag) (int64, error) {
+	var createdId int64
+	if err := dbutil.TXHandler(a.db, func(tx *sqlx.Tx) error {
+		result, err := repository.CreateArticleTag(tx, newArticleTag)
 		if err != nil {
 			return err
 		}

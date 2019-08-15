@@ -9,6 +9,8 @@ ARTICLE_ID:=1
 ARTICLE_TITLE:=title
 ARTICLE_BODY:=body
 
+ARTICLE_COMMENT_BODY:=bodycomment
+
 create-token:
 	go run ./cmd/customtoken/main.go $(UID) $(TOKEN_FILE)
 
@@ -22,13 +24,17 @@ req-articles-get:
 	curl -v $(HOST):$(PORT)/articles/$(ARTICLE_ID)
 
 req-articles-post:
-	curl -v -XPOST -H "Authorization: Bearer $(shell cat ./$(TOKEN_FILE))" $(HOST):$(PORT)/articles -d '{"title": "$(ARTICLE_TITLE)", "body": "$(ARTICLE_BODY)"}'
+	curl -v -XPOST -H "Authorization: Bearer $(shell cat ./$(TOKEN_FILE))" $(HOST):$(PORT)/articles -d '{"title": "$(ARTICLE_TITLE)", "body": "$(ARTICLE_BODY)", "tag_ids": [1, 2]}'
 
 req-articles-update:
 	curl -v -XPUT -H "Authorization: Bearer $(shell cat ./$(TOKEN_FILE))" $(HOST):$(PORT)/articles/$(ARTICLE_ID) -d '{"title": "$(ARTICLE_TITLE)", "body": "$(ARTICLE_BODY)"}'
 
 req-articles-delete:
 	curl -v -XDELETE -H "Authorization: Bearer $(shell cat ./$(TOKEN_FILE))" $(HOST):$(PORT)/articles/$(ARTICLE_ID)
+
+req-articles-comment-post:
+	curl -v -XPOST -H "Authorization: Bearer $(shell cat ./$(TOKEN_FILE))" $(HOST):$(PORT)/articles/$(ARTICLE_ID)/comments -d '{"body": "$(ARTICLE_COMMENT_BODY)"}'
+
 
 req-public:
 	curl -v $(HOST):$(PORT)/public
