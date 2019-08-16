@@ -96,6 +96,7 @@ func (a *Article) Create(newArticle *model.Article) (int64, error) {
 	var createdId int64
 	if err := dbutil.TXHandler(a.db, func(tx *sqlx.Tx) error {
 		result, err := repository.CreateArticle(tx, newArticle)
+		// fmt.Println(newArticle.Title)
 		if err != nil {
 			return err
 		}

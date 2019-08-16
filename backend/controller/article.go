@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+	"golang.org/x/net/html"
 
 	"github.com/voyagegroup/treasure-app/httputil"
 	"github.com/voyagegroup/treasure-app/model"
@@ -39,6 +40,15 @@ func NewArticleComment(dbx *sqlx.DB) *ArticleComment {
 
 func NewArticleTag(dbx *sqlx.DB) *ArticleTag {
 	return &ArticleTag{dbx: dbx}
+}
+
+func isDescription(attrs []html.Attribute) bool {
+	for _, attr := range attrs {
+		if attr.Key == "name" && attr.Val == "description" {
+			return true
+		}
+	}
+	return false
 }
 
 // 返り値のintは status code
@@ -92,6 +102,7 @@ func (a *Article) Show(w http.ResponseWriter, r *http.Request) (int, interface{}
 
 func (a *Article) Create(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
 	newArticle := &model.Article{}
+
 	if err := json.NewDecoder(r.Body).Decode(&newArticle); err != nil {
 		return http.StatusBadRequest, nil, err
 	}
@@ -103,12 +114,48 @@ func (a *Article) Create(w http.ResponseWriter, r *http.Request) (int, interface
 	newArticle.UserID = &user.ID
 
 	articleService := service.NewArticleService(a.dbx)
+	fmt.Println(newArticle)
 	id, err := articleService.Create(newArticle)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}
 	newArticle.ID = id
 
+	return http.StatusCreated, newArticle, nil
+}
+
+func (a *Article) CreatePaper(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
+
+	// vars := mux.Vars(r)
+	// keyword, ok := vars["keyword"]
+	// if !ok {
+	// 	return http.StatusBadRequest, nil, &httputil.HTTPError{Message: "invalid path parameter"}
+	// }
+
+	// fmt.Println(keyword)
+
+	newArticle := &model.Article{}
+
+	if err := json.NewDecoder(r.Body).Decode(&newArticle); err != nil {
+		return http.StatusBadRequest, nil, err
+	}
+	fmt.Println(newArticle)
+
+	// user, err := httputil.GetUserFromContext(r.Context())
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	// newArticle.UserID = &user.ID
+
+	// articleService := service.NewArticleService(a.dbx)
+	// fmt.Println(newArticle)
+	// id, err := articleService.Create(newArticle)
+	// if err != nil {
+	// 	return http.StatusInternalServerError, nil, err
+	// }
+	// newArticle.ID = id
+
+	// return http.StatusCreated, newArticle, nil
 	return http.StatusCreated, newArticle, nil
 }
 

@@ -1,0 +1,71 @@
+body {
+  height: 50vh;
+  background: #fdfdfd;
+}
+
+.word {
+  text-align: center;
+  font-family: "AvenirNext-UltraLight";
+  font-weight: normal;
+}
+
+.title {
+  margin-top: 50px;
+  font-size: 30px;
+}
+
+.keyword {
+  margin-top: 100px;
+  margin-bottom: 30px;
+  font-size: 30px;
+}
+
+.references {
+  font-size: 10px;
+}
+
+/* Fabio Ottavianiさんの作品参考: https://codepen.io/supah/pen/XdKMJK/ */
+
+.search-form {
+  position: relative;
+  top: 10vh;
+  left: 50vw;
+  width: 350px;
+  height: 40px;
+  border-radius: 40px;
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+  transform: translate(-50%, -50%);
+  background: #fff;
+}
+
+.search-text {
+  position: absolute;
+  top: 10px;
+  left: 45px;
+  font-size: 14px;
+  color: #5a6674;
+  width: 290px;
+  height: 30px;
+  border: none;
+  appearance: none;
+  outline: none;
+  background: transparent;
+  resize: none;
+}
+
+.search-button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  outline: none !important;
+}
+
+.search-icon {
+  height: 20px;
+  margin: 10px 0 0 10px;
+}
+
+.state_messages {
+  margin-top: 150px;
+  margin-bottom: 80px;
+}

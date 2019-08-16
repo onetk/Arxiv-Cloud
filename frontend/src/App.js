@@ -4,29 +4,6 @@ import { getPrivateMessage, getPublicMessage } from "./api";
 
 const API_ENDPOINT = process.env.BACKEND_API_BASE;
 
-class ArticleClient {
-  constructor() {
-    this.token = "";
-  }
-
-  async postArticle(title, body) {
-    await this.getToken();
-    return fetch(`${API_ENDPOINT}/articles`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${this.token}`
-      },
-      body: JSON.stringify({ title, body })
-    }).then(v => v.json());
-  }
-
-  async getToken() {
-    if (this.token === "") {
-      this.token = await firebase.auth().currentUser.getIdToken();
-    }
-  }
-}
-
 const successHandler = function(text) {
   const lists = JSON.parse(text);
   const items = [];
@@ -45,10 +22,24 @@ const errorHandler = function(error) {
   return error.message;
 };
 
+const successPaperHandler = function(text) {
+  const lists = text;
+  // const items = [];
+  // for (let i = 0; i < lists.length; i++) {
+  //   // console.log(lists[i]);
+  //   items.push(
+  //     <div style="border-bottom:solid 1px lightgray; margin: auto;  padding:10px 5px 0 0; width:250px;">
+  //       {lists[i].id} {lists[i].title} {lists[i].body}
+  //     </div>
+  //   );
+  // }
+
+  return lists;
+};
+
 function request(method, url) {
   return fetch(url).then(function(res) {
     if (res.ok) {
-      // console.log(res.status);
       if (res.status == 200 && method == "PUT") {
         return "success!!";
       }
@@ -74,6 +65,7 @@ class App extends Component {
     this.state.message = "";
     this.state.errorMessage = "";
     this.state.token = "";
+    this.state.text = "";
   }
 
   async getToken() {
@@ -125,6 +117,62 @@ class App extends Component {
         });
       });
   }
+
+  // getPapers() {
+  //   request("GET", "http://localhost:1991/articles/paper")
+  //     .then(resp => {
+  //       this.setState({
+  //         message: successHandler(resp)
+  //       });
+  //     })
+  //     .catch(error => {
+  //       this.setState({
+  //         errorMessage: errorHandler(error)
+  //       });
+  //     });
+  // request(
+  //   "GET",
+  //   "http://export.arxiv.org/api/query?search_query=all:" +
+  //     "deeplearning" +
+  //     "&start=0&max_results=100"
+  // )
+  //   .then(resp => {
+  //     this.setState({
+  //       message: successPaperHandler(resp)
+  //     });
+  //   })
+  //   .catch(error => {
+  //     this.setState({
+  //       errorMessage: errorHandler(error)
+  //     });
+  //   });
+  // }
+
+  async getPapers() {
+    await this.getToken();
+
+    return fetch(`http://localhost:1991/articles/paper`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.state.token}`
+      },
+      body: JSON.stringify({ title: "ok", body: "google" })
+      // body: JSON.stringify({ keyword: "google" })
+    })
+      .then(resp => {
+        console.log(resp);
+        this.setState({
+          message: successPaperHandler(resp)
+        });
+      })
+      .catch(error => {
+        this.setState({
+          errorMessage: errorHandler(error)
+        });
+      });
+  }
+
   async deleteArticles() {
     await this.getToken();
 
@@ -150,6 +198,44 @@ class App extends Component {
     });
   }
 
+  handleChange(e) {
+    this.setState({ text: e.target.value });
+  }
+
+  handleKeyDown(e) {
+    if (e.key === "Enter") {
+      console.log(this.state.text, "ok");
+      e.preventDefault();
+
+      const textareaElement = e.target;
+
+      const currentText = textareaElement.value;
+
+      const start = textareaElement.selectionStart;
+      const end = textareaElement.selectionEnd;
+
+      const spaceCount = 4;
+      const substitution = Array(spaceCount + 1).join(" ");
+
+      const newText =
+        currentText.substring(0, start) +
+        substitution +
+        currentText.substring(end, currentText.length);
+
+      this.setState(
+        {
+          text: newText
+        },
+        () => {
+          textareaElement.setSelectionRange(
+            start + spaceCount,
+            start + spaceCount
+          );
+        }
+      );
+    }
+  }
+
   render(props, state) {
     if (state.user === null) {
       return <button onClick={firebase.login}>Please login</button>;
@@ -157,7 +243,19 @@ class App extends Component {
 
     return (
       <div>
-        <div style="padding:50px;">{state.message}</div>
+        <h2 class="title word">Arxiv Cloud</h2>
+
+        <div class="search-form">
+          <textarea
+            class="search-text"
+            placeholder="Search"
+            onChange={this.handleChange.bind(this)}
+            onKeyDown={this.handleKeyDown.bind(this)}
+          />
+          <img src="search.png" class="search-icon" />
+        </div>
+
+        <div class="state_messages">{state.message}</div>
         <div style="margin:auto; width:280px;">
           <p style="color:red;">{state.errorMessage}</p>
           <button onClick={this.getPrivateMessage.bind(this)}>
@@ -167,6 +265,7 @@ class App extends Component {
           <button onClick={this.getAllArticles.bind(this)}>Get All</button>
           <button onClick={this.postArticles.bind(this)}>POST</button>
           <button onClick={this.deleteArticles.bind(this)}>Del All</button>
+          <button onClick={this.getPapers.bind(this)}>Get Paper</button>
         </div>
       </div>
     );
