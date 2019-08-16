@@ -10,11 +10,14 @@ body {
 }
 
 .title {
+  text-align: center;
+  margin: auto;
   margin-top: 50px;
   font-size: 30px;
   text-decoration: none;
   color: black;
   cursor: default;
+  width: 300px;
 }
 
 .keyword {
@@ -32,7 +35,7 @@ body {
 .search-form {
   position: relative;
   top: 10vh;
-  left: 50vw;
+  left: 49vw;
   width: 350px;
   height: 40px;
   border-radius: 40px;

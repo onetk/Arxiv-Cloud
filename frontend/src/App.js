@@ -23,18 +23,18 @@ const errorHandler = function(error) {
 };
 
 const successPaperHandler = function(text) {
-  const lists = text;
-  // const items = [];
-  // for (let i = 0; i < lists.length; i++) {
-  //   // console.log(lists[i]);
-  //   items.push(
-  //     <div style="border-bottom:solid 1px lightgray; margin: auto;  padding:10px 5px 0 0; width:250px;">
-  //       {lists[i].id} {lists[i].title} {lists[i].body}
-  //     </div>
-  //   );
-  // }
+  const lists = JSON.parse(text);
+  const items = [];
+  // for (let i = 0; i < Object.keys(lists).length; i++) {
+  for (let i = 1; i < Object.keys(lists).length; i++) {
+    items.push(
+      <div style="border-bottom:solid 1px lightgray; margin: auto;  padding:10px 5px 0 0; width:700px; font-size:10px;">
+        {lists[i][0]}
+      </div>
+    );
+  }
 
-  return lists;
+  return items;
 };
 
 function request(method, url) {
@@ -218,11 +218,13 @@ class App extends Component {
 
       request("GET", "http://localhost:1991/paper?" + params.toString())
         .then(resp => {
+          console.log("success");
           this.setState({
-            message: successHandler(resp)
+            message: successPaperHandler(resp)
           });
         })
         .catch(error => {
+          console.log("fail");
           this.setState({
             errorMessage: errorHandler(error)
           });

@@ -97,7 +97,6 @@ func (s *Server) Route() *mux.Router {
 	r.Methods(http.MethodGet).Path("/articles/{id}").Handler(commonChain.Then(AppHandler{articleController.Show}))
 	r.Methods(http.MethodGet).Path("/articles/search/{tag}").Handler(commonChain.Then(AppHandler{articleController.SearchIndex}))
 	r.Methods(http.MethodGet).Path("/paper").Handler(commonChain.Then(AppHandler{articleController.CreatePaper}))
-
 	articleCommentController := controller.NewArticleComment(s.dbx)
 	r.Methods(http.MethodPost).Path("/articles/{article_id}/comments").Handler(authChain.Then(AppHandler{articleCommentController.CreateArticleComment}))
 
@@ -105,5 +104,6 @@ func (s *Server) Route() *mux.Router {
 	r.Methods(http.MethodPost).Path("/articles/tag/{article_id}").Handler(authChain.Then(AppHandler{articleTagController.CreateArticleTag}))
 
 	r.PathPrefix("").Handler(commonChain.Then(http.StripPrefix("/img", http.FileServer(http.Dir("./img")))))
+
 	return r
 }

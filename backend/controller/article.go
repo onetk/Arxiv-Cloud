@@ -18,10 +18,6 @@ import (
 	"github.com/voyagegroup/treasure-app/service"
 )
 
-type Paper struct {
-	Title    string
-	Abstract string
-}
 type Article struct {
 	dbx *sqlx.DB
 }
@@ -52,6 +48,7 @@ func (a *Article) Index(w http.ResponseWriter, r *http.Request) (int, interface{
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}
+	// fmt.Println(reflect.TypeOf(articles))
 	return http.StatusOK, articles, nil
 }
 
@@ -120,6 +117,11 @@ func (a *Article) Create(w http.ResponseWriter, r *http.Request) (int, interface
 	return http.StatusCreated, newArticle, nil
 }
 
+type Paper struct {
+	Title    string
+	Abstract string
+}
+
 func isDescription(attrs []html.Attribute) bool {
 	for _, attr := range attrs {
 		if attr.Key == "title" && attr.Val == "summary" {
@@ -134,7 +136,7 @@ func (a *Article) CreatePaper(w http.ResponseWriter, r *http.Request) (int, inte
 	vars := r.URL.Query()
 	keyword := vars["keyword"][0]
 
-	resp, err := http.Get("http://export.arxiv.org/api/query?search_query=all:" + keyword + "&start=0&max_results=100")
+	resp, err := http.Get("http://export.arxiv.org/api/query?search_query=all:" + keyword + "&start=0&max_results=30")
 
 	if err != nil {
 		return 0, nil, err
@@ -146,8 +148,25 @@ func (a *Article) CreatePaper(w http.ResponseWriter, r *http.Request) (int, inte
 		return 0, nil, err
 	}
 
+	var paper_num int
+	var fs func(*html.Node)
+	fs = func(n *html.Node) {
+
+		// fmt.Println(*n)
+		if n.Type == html.ElementNode && n.Data == "opensearch:itemsPerPage" {
+			paper_num, _ = strconv.Atoi(n.FirstChild.Data)
+
+		}
+
+		for cs := n.FirstChild; cs != nil; cs = cs.NextSibling {
+			fs(cs)
+		}
+	}
+
 	// 修正して :pray:
 	var count int = 0
+	dictinary := make(map[int][]string, paper_num)
+	// var dictinary map[int][]string
 
 	var paper Paper
 	var f func(*html.Node)
@@ -162,7 +181,8 @@ func (a *Article) CreatePaper(w http.ResponseWriter, r *http.Request) (int, inte
 			paper.Abstract = n.FirstChild.Data
 		}
 		if n.Type == html.ElementNode && n.Data == "entry" {
-			fmt.Println("ok", count)
+			dictinary[count] = []string{paper.Title, paper.Abstract}
+			// fmt.Println("ok", count)
 			count++
 		}
 
@@ -171,19 +191,8 @@ func (a *Article) CreatePaper(w http.ResponseWriter, r *http.Request) (int, inte
 		}
 	}
 	f(doc)
-	fmt.Println("Search Start")
-	fmt.Printf("%#v", paper)
 
-	tag := "tes"
-
-	articles, err := repository.SearchArticle(a.dbx, tag)
-	if err != nil && err == sql.ErrNoRows {
-		return http.StatusNotFound, nil, err
-	} else if err != nil {
-		return http.StatusInternalServerError, nil, err
-	}
-
-	return http.StatusOK, articles, nil
+	return http.StatusOK, dictinary, nil
 }
 
 func (a *Article) Update(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
