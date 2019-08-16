@@ -18,6 +18,10 @@ import (
 	"github.com/voyagegroup/treasure-app/service"
 )
 
+type Paper struct {
+	Title    string
+	Abstract string
+}
 type Article struct {
 	dbx *sqlx.DB
 }
@@ -40,15 +44,6 @@ func NewArticleComment(dbx *sqlx.DB) *ArticleComment {
 
 func NewArticleTag(dbx *sqlx.DB) *ArticleTag {
 	return &ArticleTag{dbx: dbx}
-}
-
-func isDescription(attrs []html.Attribute) bool {
-	for _, attr := range attrs {
-		if attr.Key == "name" && attr.Val == "description" {
-			return true
-		}
-	}
-	return false
 }
 
 // 返り値のintは status code
@@ -84,7 +79,7 @@ func (a *Article) Show(w http.ResponseWriter, r *http.Request) (int, interface{}
 	if !ok {
 		return http.StatusBadRequest, nil, &httputil.HTTPError{Message: "invalid path parameter"}
 	}
-
+	fmt.Println("show")
 	aid, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		return http.StatusBadRequest, nil, err
@@ -102,6 +97,7 @@ func (a *Article) Show(w http.ResponseWriter, r *http.Request) (int, interface{}
 
 func (a *Article) Create(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
 	newArticle := &model.Article{}
+	fmt.Println("tes")
 
 	if err := json.NewDecoder(r.Body).Decode(&newArticle); err != nil {
 		return http.StatusBadRequest, nil, err
@@ -124,39 +120,70 @@ func (a *Article) Create(w http.ResponseWriter, r *http.Request) (int, interface
 	return http.StatusCreated, newArticle, nil
 }
 
-func (a *Article) CreatePaper(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
-
-	// vars := mux.Vars(r)
-	// keyword, ok := vars["keyword"]
-	// if !ok {
-	// 	return http.StatusBadRequest, nil, &httputil.HTTPError{Message: "invalid path parameter"}
-	// }
-
-	// fmt.Println(keyword)
-
-	newArticle := &model.Article{}
-
-	if err := json.NewDecoder(r.Body).Decode(&newArticle); err != nil {
-		return http.StatusBadRequest, nil, err
+func isDescription(attrs []html.Attribute) bool {
+	for _, attr := range attrs {
+		if attr.Key == "title" && attr.Val == "summary" {
+			return true
+		}
 	}
-	fmt.Println(newArticle)
+	return false
+}
 
-	// user, err := httputil.GetUserFromContext(r.Context())
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
-	// newArticle.UserID = &user.ID
+func (a *Article) CreatePaper(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
+	// vars := mux.Vars(r)
+	vars := r.URL.Query()
+	keyword := vars["keyword"][0]
 
-	// articleService := service.NewArticleService(a.dbx)
-	// fmt.Println(newArticle)
-	// id, err := articleService.Create(newArticle)
-	// if err != nil {
-	// 	return http.StatusInternalServerError, nil, err
-	// }
-	// newArticle.ID = id
+	resp, err := http.Get("http://export.arxiv.org/api/query?search_query=all:" + keyword + "&start=0&max_results=100")
 
-	// return http.StatusCreated, newArticle, nil
-	return http.StatusCreated, newArticle, nil
+	if err != nil {
+		return 0, nil, err
+	}
+	defer resp.Body.Close()
+
+	doc, err := html.Parse(resp.Body)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	// 修正して :pray:
+	var count int = 0
+
+	var paper Paper
+	var f func(*html.Node)
+
+	f = func(n *html.Node) {
+
+		// fmt.Println(*n)
+		if n.Type == html.ElementNode && n.Data == "title" {
+			paper.Title = n.FirstChild.Data
+		}
+		if n.Type == html.ElementNode && n.Data == "summary" {
+			paper.Abstract = n.FirstChild.Data
+		}
+		if n.Type == html.ElementNode && n.Data == "entry" {
+			fmt.Println("ok", count)
+			count++
+		}
+
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			f(c)
+		}
+	}
+	f(doc)
+	fmt.Println("Search Start")
+	fmt.Printf("%#v", paper)
+
+	tag := "tes"
+
+	articles, err := repository.SearchArticle(a.dbx, tag)
+	if err != nil && err == sql.ErrNoRows {
+		return http.StatusNotFound, nil, err
+	} else if err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+
+	return http.StatusOK, articles, nil
 }
 
 func (a *Article) Update(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
@@ -165,6 +192,7 @@ func (a *Article) Update(w http.ResponseWriter, r *http.Request) (int, interface
 	if !ok {
 		return http.StatusBadRequest, nil, &httputil.HTTPError{Message: "invalid path parameter"}
 	}
+	fmt.Println("update")
 
 	aid, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
@@ -193,6 +221,7 @@ func (a *Article) Destroy(w http.ResponseWriter, r *http.Request) (int, interfac
 	if !ok {
 		return http.StatusBadRequest, nil, &httputil.HTTPError{Message: "invalid path parameter"}
 	}
+	fmt.Println("destroy")
 
 	aid, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {

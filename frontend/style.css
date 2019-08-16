@@ -12,6 +12,9 @@ body {
 .title {
   margin-top: 50px;
   font-size: 30px;
+  text-decoration: none;
+  color: black;
+  cursor: default;
 }
 
 .keyword {
@@ -61,8 +64,8 @@ body {
 }
 
 .search-icon {
-  height: 20px;
-  margin: 10px 0 0 10px;
+  height: 18px;
+  margin: 12px 0 0 15px;
 }
 
 .state_messages {
