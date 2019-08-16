@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/voyagegroup/treasure-app/model"
@@ -53,13 +54,13 @@ SELECT id, title, body FROM article WHERE id = ?
 
 func CreateArticle(db *sqlx.Tx, a *model.Article) (sql.Result, error) {
 	stmt, err := db.Prepare(`
-INSERT INTO article (user_id, title, body, tag) VALUES (?, ?, ?, ?)
+INSERT INTO article (user_id, title, body) VALUES (?, ?, ?)
 `)
 	if err != nil {
 		return nil, err
 	}
 	defer stmt.Close()
-	return stmt.Exec(a.UserID, a.Title, a.Body, a.Tag)
+	return stmt.Exec(a.UserID, a.Title, a.Body)
 }
 
 func UpdateArticle(db *sqlx.Tx, id int64, a *model.Article) (sql.Result, error) {
@@ -82,6 +83,33 @@ DELETE FROM article WHERE id = ?
 	}
 	defer stmt.Close()
 	return stmt.Exec(id)
+}
+
+func DestroyAllArticle(db *sqlx.Tx) (sql.Result, error) {
+	fmt.Println("-- ↓↓↓ --  before  -- ↓↓↓ --")
+
+	a := make([]model.Article, 0)
+	if err := db.Select(&a, `SELECT id, title, body, user_id FROM article`); err != nil {
+		return nil, err
+	}
+	fmt.Println(a)
+	fmt.Println("--  before  -- / --  after --")
+
+	stmt, err := db.Prepare(`
+DELETE FROM article
+`)
+	if err != nil {
+		return nil, err
+	}
+
+	b := make([]model.Article, 0)
+	if err := db.Select(&b, `SELECT id, title, body, user_id FROM article`); err != nil {
+		return nil, err
+	}
+	fmt.Println(b)
+	fmt.Println("-- ↑↑↑ --  after  -- ↑↑↑ --")
+	defer stmt.Close()
+	return stmt.Exec()
 }
 
 func CreateArticleComment(db *sqlx.Tx, a *model.ArticleComment) (sql.Result, error) {

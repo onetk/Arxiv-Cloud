@@ -75,6 +75,23 @@ func (a *Article) Destroy(id int64) error {
 	return nil
 }
 
+func (a *Article) DestroyAll() error {
+
+	if err := dbutil.TXHandler(a.db, func(tx *sqlx.Tx) error {
+		_, err := repository.DestroyAllArticle(tx)
+		if err != nil {
+			return err
+		}
+		if err := tx.Commit(); err != nil {
+			return err
+		}
+		return err
+	}); err != nil {
+		return errors.Wrap(err, "failed article delete transaction")
+	}
+	return nil
+}
+
 func (a *Article) Create(newArticle *model.Article) (int64, error) {
 	var createdId int64
 	if err := dbutil.TXHandler(a.db, func(tx *sqlx.Tx) error {

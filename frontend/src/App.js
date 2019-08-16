@@ -125,6 +125,17 @@ class App extends Component {
         });
       });
   }
+  async deleteArticles() {
+    await this.getToken();
+
+    return fetch(`http://localhost:1991/articles`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.state.token}`
+      }
+    });
+  }
 
   async postArticles() {
     await this.getToken();
@@ -147,7 +158,7 @@ class App extends Component {
     return (
       <div>
         <div style="padding:50px;">{state.message}</div>
-        <div style="margin:auto; width:300px;">
+        <div style="margin:auto; width:280px;">
           <p style="color:red;">{state.errorMessage}</p>
           <button onClick={this.getPrivateMessage.bind(this)}>
             Get Private Message
@@ -155,6 +166,7 @@ class App extends Component {
           <button onClick={firebase.logout}>Logout</button>
           <button onClick={this.getAllArticles.bind(this)}>Get All</button>
           <button onClick={this.postArticles.bind(this)}>POST</button>
+          <button onClick={this.deleteArticles.bind(this)}>Del All</button>
         </div>
       </div>
     );

@@ -90,6 +90,7 @@ func (s *Server) Route() *mux.Router {
 	r.Methods(http.MethodPost).Path("/articles").Handler(authChain.Then(AppHandler{articleController.Create}))
 	r.Methods(http.MethodPut).Path("/articles/{id}").Handler(authChain.Then(AppHandler{articleController.Update}))
 	r.Methods(http.MethodDelete).Path("/articles/{id}").Handler(authChain.Then(AppHandler{articleController.Destroy}))
+	r.Methods(http.MethodDelete).Path("/articles").Handler(authChain.Then(AppHandler{articleController.DestroyAll}))
 	r.Methods(http.MethodGet).Path("/articles").Handler(commonChain.Then(AppHandler{articleController.Index}))
 	r.Methods(http.MethodGet).Path("/articles/{id}").Handler(commonChain.Then(AppHandler{articleController.Show}))
 	r.Methods(http.MethodGet).Path("/articles/search/{tag}").Handler(commonChain.Then(AppHandler{articleController.SearchIndex}))

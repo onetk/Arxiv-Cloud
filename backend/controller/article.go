@@ -163,6 +163,19 @@ func (a *Article) Destroy(w http.ResponseWriter, r *http.Request) (int, interfac
 	return http.StatusNoContent, nil, nil
 }
 
+func (a *Article) DestroyAll(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
+
+	articleService := service.NewArticleService(a.dbx)
+	err := articleService.DestroyAll()
+	if err != nil && errors.Cause(err) == sql.ErrNoRows {
+		return http.StatusNotFound, nil, err
+	} else if err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+
+	return http.StatusNoContent, nil, nil
+}
+
 func (a *ArticleComment) CreateArticleComment(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
 	newArticleComment := &model.ArticleComment{}
 	if err := json.NewDecoder(r.Body).Decode(&newArticleComment); err != nil {
