@@ -32,6 +32,7 @@ const errorHandler = function(error) {
 
 const successPaperHandler = function(text) {
   const lists = JSON.parse(text);
+  console.log(lists);
   const items = [];
   // for (let i = 0; i < Object.keys(lists).length; i++) {
   for (let i = 1; i < Object.keys(lists).length; i++) {
@@ -42,6 +43,9 @@ const successPaperHandler = function(text) {
         </div>
         <div style="margin: auto;  padding:10px 5px 0 0; width:700px; font-size:10px;">
           {lists[i][2]}
+        </div>
+        <div style="margin: auto;  padding:10px 5px 0 0; width:700px; font-size:10px; text-align:right;">
+          #{lists[i][3]} #{lists[i][4]} #{lists[i][5]}
         </div>
       </div>
     );
