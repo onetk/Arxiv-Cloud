@@ -64,7 +64,30 @@ func (a *Article) Index(w http.ResponseWriter, r *http.Request) (int, interface{
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}
-	// fmt.Println(reflect.TypeOf(articles))
+
+	tags, err := repository.AllTag(a.dbx)
+
+	if err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+
+	// var concat string
+	var temp int64 = -1
+	var count int = 0
+	var concat []string
+
+	for i := 0; i < len(tags); i++ {
+		if tags[i].ArticleID != temp {
+			concat[count] = tags[i].Tag + "," + tags[i+1].Tag + "," + tags[i+2].Tag
+			temp = tags[i].ArticleID
+			count++
+			fmt.Println(tags[i].ArticleID, concat)
+			// articles.Tag = &concat[count]
+		}
+		// temp = tags[i].ArticleID
+
+	}
+
 	return http.StatusOK, articles, nil
 }
 
@@ -259,10 +282,9 @@ func (a *Article) CreatePaper(w http.ResponseWriter, r *http.Request) (int, inte
 
 		for k := 1; k < len(keywords); k++ {
 			splitKeys := strings.Split(keywords[k], ":")
-			// fmt.Println(splitKeys[0])
 			dictionary[j] = append(dictionary[j], splitKeys[0])
-			fmt.Println(dictionary[j])
-			// fmt.Println(dictionary[j][2+j])
+			// fmt.Println(splitKeys[0])
+			// fmt.Println(dictionary[j])
 
 			newArticleTag := &model.ArticleTag{ArticleID: id, Tag: splitKeys[0]} //, Body: splitKeys[1]}
 

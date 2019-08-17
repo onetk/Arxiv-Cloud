@@ -6,6 +6,7 @@ const API_ENDPOINT = process.env.BACKEND_API_BASE;
 
 const successHandler = function(text) {
   const lists = JSON.parse(text);
+  console.log(lists);
   const items = [];
   for (let i = 0; i < lists.length; i++) {
     // console.log(lists[i]);
@@ -44,7 +45,7 @@ const successPaperHandler = function(text) {
         <div style="margin: auto;  padding:10px 5px 0 0; width:700px; font-size:10px;">
           {lists[i][2]}
         </div>
-        <div style="margin: auto;  padding:10px 5px 0 0; width:700px; font-size:10px; text-align:right;">
+        <div style="margin: auto;  padding:0px 10px 0 0; width:700px; font-size:10px; text-align:right;">
           #{lists[i][3]} #{lists[i][4]} #{lists[i][5]}
         </div>
       </div>
