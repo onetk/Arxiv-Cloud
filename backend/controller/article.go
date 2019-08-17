@@ -10,19 +10,18 @@ import (
 	"os"
 	"strconv"
 
+	"cloud.google.com/go/translate"
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	"golang.org/x/net/html"
+	"golang.org/x/text/language"
+	"google.golang.org/api/option"
 
 	"github.com/voyagegroup/treasure-app/httputil"
 	"github.com/voyagegroup/treasure-app/model"
 	"github.com/voyagegroup/treasure-app/repository"
 	"github.com/voyagegroup/treasure-app/service"
-
-	"cloud.google.com/go/translate"
-	"golang.org/x/text/language"
-	"google.golang.org/api/option"
 )
 
 type Article struct {
@@ -47,44 +46,6 @@ func NewArticleComment(dbx *sqlx.DB) *ArticleComment {
 
 func NewArticleTag(dbx *sqlx.DB) *ArticleTag {
 	return &ArticleTag{dbx: dbx}
-}
-
-func createClientWithKey() {
-	ctx := context.Background()
-
-	apiKey := os.Getenv("GOOGLE_CLOUD_API_KEY")
-	client, err := translate.NewClient(ctx, option.WithAPIKey(apiKey))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	resp, err := client.Translate(ctx, []string{"Hello, world!"}, language.Russian, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Printf("%#v", resp)
-}
-
-func translateText(targetLanguage, text string) (string, error) {
-	ctx := context.Background()
-
-	lang, err := language.Parse(targetLanguage)
-	if err != nil {
-		return "", err
-	}
-
-	client, err := translate.NewClient(ctx)
-	if err != nil {
-		return "", err
-	}
-	defer client.Close()
-
-	resp, err := client.Translate(ctx, []string{text}, lang, nil)
-	if err != nil {
-		return "", err
-	}
-	return resp[0].Text, nil
 }
 
 // 返り値のintは status code
@@ -207,17 +168,97 @@ func searchArxiv(keyword string, limit int) (map[int][]string, error) {
 	return dictionary, nil
 }
 
+// func translateWord(words_en string) (string, error) {
+
+// 	jsonStr := `{"contents": [` + words_en + `], "sourceLanguageCode": en, "targetLanguageCode": ja}`
+
+// 	req, err := http.NewRequest(
+// 		"POST",
+// 		"https://translation.googleapis.com/v3beta1/parent=projects/meta-gateway-223503:translateText",
+// 		bytes.NewBuffer([]byte(jsonStr)),
+// 	)
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	req.Header.Set("Content-Type", "application/json")
+
+// 	client := &http.Client{}
+// 	resp, err := client.Do(req)
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	defer resp.Body.Close()
+
+// 	doc, err := html.Parse(resp.Body)
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	fmt.Println(doc)
+// 	return "", err
+// }
+
+func createClientWithKey() {
+	ctx := context.Background()
+
+	apiKey := os.Getenv("GOOGLE_CLOUD_API_KEY")
+	client, err := translate.NewClient(ctx, option.WithAPIKey(apiKey))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	resp, err := client.Translate(ctx, []string{"Hello, world!"}, language.Russian, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("%#v", resp)
+}
+
+func translateText(targetLanguage, text string) (string, error) {
+	ctx := context.Background()
+
+	lang, err := language.Parse(targetLanguage)
+	if err != nil {
+		return "", err
+	}
+
+	client, err := translate.NewClient(ctx)
+	if err != nil {
+		return "", err
+	}
+	defer client.Close()
+
+	resp, err := client.Translate(ctx, []string{text}, lang, nil)
+	if err != nil {
+		return "", err
+	}
+	return resp[0].Text, nil
+}
+
 func (a *Article) CreatePaper(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
-	// vars := mux.Vars(r)
 	vars := r.URL.Query()
 	keyword := vars["keyword"][0]
 
-	dictionary, err := searchArxiv(keyword, 30)
+	dictionary, err := searchArxiv(keyword, 5)
+
+	fmt.Println(dictionary[0][1])
+	if err != nil {
+		return http.StatusBadRequest, nil, err
+	}
+	// fmt.Println(len(dictionary))
+	for i := 0; i < len(dictionary); i++ {
+		translated, err := translateText("ja", dictionary[i][1])
+		if err != nil {
+			return http.StatusBadRequest, nil, err
+		}
+		dictionary[i] = []string{dictionary[i][0], dictionary[i][1], translated}
+	}
 
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
-
+	// fmt.Println(translated)
+	fmt.Println(dictionary)
 	return http.StatusOK, dictionary, nil
 }
 
