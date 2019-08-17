@@ -148,9 +148,7 @@ type Result struct {
 	Score     string `xml:"Score"`
 }
 
-func extractKeyword(text string) (interface{}, error) {
-
-	var keywords string
+func extractKeyword(text string) ([]string, error) {
 
 	baseUrl, err := url.Parse("https://jlp.yahooapis.jp/KeyphraseService/V1/extract?")
 	if err != nil {
@@ -165,7 +163,6 @@ func extractKeyword(text string) (interface{}, error) {
 	params.Add("output", "json")
 
 	baseUrl.RawQuery = params.Encode()
-	// fmt.Println(baseUrl.String())
 
 	resp, err := http.Get(baseUrl.String())
 	if err != nil {
@@ -184,42 +181,41 @@ func extractKeyword(text string) (interface{}, error) {
 	docUni8, _ := strconv.Unquote("\"" + docTrim + "\"")
 	docReplace := strings.Replace(docUni8, "`", "", -1)
 	docArray := strings.Split(docReplace, ",")
-	for i := 0; i < len(docArray); i++ {
-		fmt.Println(strings.Split(docArray[i], ":"))
+	// for i := 0; i < len(docArray); i++ {
+	// 	fmt.Println(strings.Split(docArray[i], ":"))
 
-	}
+	// }
 
-	// unquoted, _ := strconv.Unquote("\u30dd\u30bc\u30c3\u30c8\u4ee3\u6570")
-	// fmt.Println(unquoted)
-
-	return keywords, nil
+	return docArray, nil
 }
 
 func (a *Article) TagIndex(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
 
 	articles, err := repository.AllArticle(a.dbx)
-	fmt.Println(articles[2].Body)
-	keywords, _ := extractKeyword(articles[2].Body)
-	fmt.Println(keywords)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}
+
+	keywords, err := extractKeyword(articles[2].Body)
+	if err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+
+	for j := 1; j < len(keywords); j++ {
+		splitKeys := strings.Split(keywords[j], ":")
+		// fmt.Println(splitKeys[0])
+		newArticleTag := &model.ArticleTag{Tag: splitKeys[0]} //, Body: splitKeys[1]}
+
+		articleTagService := service.NewArticleTagService(a.dbx)
+		id, err := articleTagService.CreateArticleTag(newArticleTag)
+
+		if err != nil {
+			return http.StatusInternalServerError, nil, err
+		}
+		newArticleTag.ID = id
+	}
+
 	return http.StatusOK, articles, nil
-
-	// newArticleTag := &model.ArticleTag{}
-	// if err := json.NewDecoder(r.Body).Decode(&newArticleTag); err != nil {
-	// 	return http.StatusBadRequest, nil, err
-	// }
-
-	// articleTagService := service.NewArticleTagService(a.dbx)
-	// id, err := articleTagService.CreateArticleTag(newArticleTag)
-	// if err != nil {
-	// 	return http.StatusInternalServerError, nil, err
-	// }
-	// newArticleTag.ID = id
-
-	// return http.StatusCreated, newArticleTag, nil
-
 }
 
 func (a *Article) SearchIndex(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
@@ -294,7 +290,7 @@ func (a *Article) CreatePaper(w http.ResponseWriter, r *http.Request) (int, inte
 
 	dictionary, err := searchArxiv(keyword, 3)
 
-	fmt.Println(dictionary[0][1])
+	// fmt.Println(dictionary[0][1])
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
@@ -335,6 +331,26 @@ func (a *Article) CreatePaper(w http.ResponseWriter, r *http.Request) (int, inte
 			return http.StatusInternalServerError, nil, err
 		}
 		newArticle.ID = id
+
+		keywords, err := extractKeyword(dictionary[j][2])
+		if err != nil {
+			return http.StatusInternalServerError, nil, err
+		}
+
+		for j := 1; j < len(keywords); j++ {
+			splitKeys := strings.Split(keywords[j], ":")
+			// fmt.Println(splitKeys[0])
+			newArticleTag := &model.ArticleTag{ArticleID: id, Tag: splitKeys[0]} //, Body: splitKeys[1]}
+
+			articleTagService := service.NewArticleTagService(a.dbx)
+			id, err := articleTagService.CreateArticleTag(newArticleTag)
+
+			if err != nil {
+				return http.StatusInternalServerError, nil, err
+			}
+			newArticleTag.ID = id
+		}
+
 	}
 
 	// fmt.Println(dictionary)
