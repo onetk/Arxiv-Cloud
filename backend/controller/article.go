@@ -194,7 +194,7 @@ func searchArxiv(keyword string, limit int) (map[int][]string, error) {
 
 	// 未来の自分へ、修正して:pray:
 	var count int = 0
-	dictionary := make(map[int][]string)
+	dictionary := make(map[int][]string) //,paper_num)
 
 	var paper Paper
 	var f func(*html.Node)
