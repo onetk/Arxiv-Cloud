@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 
@@ -131,7 +132,6 @@ func translateText(targetLanguage, text string) (string, error) {
 	return resp[0].Text, nil
 }
 
-// 返り値のintは status code
 func (a *Article) Index(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
 	articles, err := repository.AllArticle(a.dbx)
 	if err != nil {
@@ -139,6 +139,58 @@ func (a *Article) Index(w http.ResponseWriter, r *http.Request) (int, interface{
 	}
 	// fmt.Println(reflect.TypeOf(articles))
 	return http.StatusOK, articles, nil
+}
+
+func extractKeyword(text string) (interface{}, error) {
+
+	var keywords string
+
+	baseUrl, err := url.Parse("https://jlp.yahooapis.jp/KeyphraseService/V1/extract?")
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
+	params := url.Values{}
+	params.Add("appid", os.Getenv("YAHOO_KEYWORD_API"))
+	params.Add("sentence", url.QueryEscape(text))
+	params.Add("output", "json")
+
+	baseUrl.RawQuery = params.Encode()
+
+	fmt.Printf("%q\n", baseUrl.String())
+
+	// uri := "https://jlp.yahooapis.jp/KeyphraseService/V1/extract?" + strconv.Itoa(params)
+	// return JSON.load(open(uri).read)
+
+	return keywords, nil
+}
+
+func (a *Article) TagIndex(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
+
+	articles, err := repository.AllArticle(a.dbx)
+	fmt.Println(articles[1].Body)
+	keywords, _ := extractKeyword("text aiueo")
+	fmt.Println(keywords)
+	if err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+	return http.StatusOK, articles, nil
+
+	// newArticleTag := &model.ArticleTag{}
+	// if err := json.NewDecoder(r.Body).Decode(&newArticleTag); err != nil {
+	// 	return http.StatusBadRequest, nil, err
+	// }
+
+	// articleTagService := service.NewArticleTagService(a.dbx)
+	// id, err := articleTagService.CreateArticleTag(newArticleTag)
+	// if err != nil {
+	// 	return http.StatusInternalServerError, nil, err
+	// }
+	// newArticleTag.ID = id
+
+	// return http.StatusCreated, newArticleTag, nil
+
 }
 
 func (a *Article) SearchIndex(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {

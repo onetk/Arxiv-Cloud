@@ -131,6 +131,20 @@ class App extends Component {
       });
   }
 
+  getAllTags() {
+    request("GET", "http://localhost:1991/tag")
+      .then(resp => {
+        this.setState({
+          message: successHandler(resp)
+        });
+      })
+      .catch(error => {
+        this.setState({
+          errorMessage: errorHandler(error)
+        });
+      });
+  }
+
   // getPapers() {
   //   request("GET", "http://localhost:1991/articles/paper")
   //     .then(resp => {
@@ -275,7 +289,8 @@ class App extends Component {
             Get Private Message
           </button> */}
           <button onClick={this.getAllArticles.bind(this)}>List message</button>
-          <button onClick={this.postArticles.bind(this)}>Post</button>
+          <button onClick={this.getAllTags.bind(this)}>Tag</button>
+          {/* <button onClick={this.postArticles.bind(this)}>Post</button> */}
           <button onClick={this.deleteArticles.bind(this)}>Delete All</button>
           <button onClick={firebase.logout}>Logout</button>
         </div>
