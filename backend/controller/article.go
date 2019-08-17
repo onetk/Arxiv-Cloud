@@ -1,10 +1,13 @@
 package controller
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -16,6 +19,10 @@ import (
 	"github.com/voyagegroup/treasure-app/model"
 	"github.com/voyagegroup/treasure-app/repository"
 	"github.com/voyagegroup/treasure-app/service"
+
+	"cloud.google.com/go/translate"
+	"golang.org/x/text/language"
+	"google.golang.org/api/option"
 )
 
 type Article struct {
@@ -40,6 +47,44 @@ func NewArticleComment(dbx *sqlx.DB) *ArticleComment {
 
 func NewArticleTag(dbx *sqlx.DB) *ArticleTag {
 	return &ArticleTag{dbx: dbx}
+}
+
+func createClientWithKey() {
+	ctx := context.Background()
+
+	apiKey := os.Getenv("GOOGLE_CLOUD_API_KEY")
+	client, err := translate.NewClient(ctx, option.WithAPIKey(apiKey))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	resp, err := client.Translate(ctx, []string{"Hello, world!"}, language.Russian, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("%#v", resp)
+}
+
+func translateText(targetLanguage, text string) (string, error) {
+	ctx := context.Background()
+
+	lang, err := language.Parse(targetLanguage)
+	if err != nil {
+		return "", err
+	}
+
+	client, err := translate.NewClient(ctx)
+	if err != nil {
+		return "", err
+	}
+	defer client.Close()
+
+	resp, err := client.Translate(ctx, []string{text}, lang, nil)
+	if err != nil {
+		return "", err
+	}
+	return resp[0].Text, nil
 }
 
 // 返り値のintは status code
@@ -122,58 +167,40 @@ type Paper struct {
 	Abstract string
 }
 
-func isDescription(attrs []html.Attribute) bool {
-	for _, attr := range attrs {
-		if attr.Key == "title" && attr.Val == "summary" {
-			return true
-		}
-	}
-	return false
-}
+func searchArxiv(keyword string, limit int) (map[int][]string, error) {
 
-func (a *Article) CreatePaper(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
-	// vars := mux.Vars(r)
-	vars := r.URL.Query()
-	keyword := vars["keyword"][0]
-
-	resp, err := http.Get("http://export.arxiv.org/api/query?search_query=all:" + keyword + "&start=0&max_results=30")
+	resp, err := http.Get("http://export.arxiv.org/api/query?search_query=all:" + keyword + "&start=0&max_results=" + strconv.Itoa(limit))
 
 	if err != nil {
-		return 0, nil, err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	doc, err := html.Parse(resp.Body)
 	if err != nil {
-		return 0, nil, err
+		return nil, err
 	}
 
-	var paper_num int
-	var fs func(*html.Node)
-	fs = func(n *html.Node) {
+	// var paper_num int
+	// var fs func(*html.Node)
+	// fs = func(n *html.Node) {
+	// 	if n.Type == html.ElementNode && n.Data == "opensearch:itemsPerPage" {
+	// 		paper_num, _ = strconv.Atoi(n.FirstChild.Data)
+	// 	}
+	// 	for cs := n.FirstChild; cs != nil; cs = cs.NextSibling {
+	// 		fs(cs)
+	// 	}
+	// }
 
-		// fmt.Println(*n)
-		if n.Type == html.ElementNode && n.Data == "opensearch:itemsPerPage" {
-			paper_num, _ = strconv.Atoi(n.FirstChild.Data)
-
-		}
-
-		for cs := n.FirstChild; cs != nil; cs = cs.NextSibling {
-			fs(cs)
-		}
-	}
-
-	// 修正して :pray:
+	// 未来の自分へ、修正して:pray:
 	var count int = 0
-	dictinary := make(map[int][]string, paper_num)
-	// var dictinary map[int][]string
+	dictionary := make(map[int][]string)
 
 	var paper Paper
 	var f func(*html.Node)
 
 	f = func(n *html.Node) {
 
-		// fmt.Println(*n)
 		if n.Type == html.ElementNode && n.Data == "title" {
 			paper.Title = n.FirstChild.Data
 		}
@@ -181,18 +208,29 @@ func (a *Article) CreatePaper(w http.ResponseWriter, r *http.Request) (int, inte
 			paper.Abstract = n.FirstChild.Data
 		}
 		if n.Type == html.ElementNode && n.Data == "entry" {
-			dictinary[count] = []string{paper.Title, paper.Abstract}
-			// fmt.Println("ok", count)
+			dictionary[count] = []string{paper.Title, paper.Abstract}
 			count++
 		}
-
 		for c := n.FirstChild; c != nil; c = c.NextSibling {
 			f(c)
 		}
 	}
 	f(doc)
+	return dictionary, nil
+}
 
-	return http.StatusOK, dictinary, nil
+func (a *Article) CreatePaper(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
+	// vars := mux.Vars(r)
+	vars := r.URL.Query()
+	keyword := vars["keyword"][0]
+
+	dictionary, err := searchArxiv(keyword, 30)
+
+	if err != nil {
+		return http.StatusBadRequest, nil, err
+	}
+
+	return http.StatusOK, dictionary, nil
 }
 
 func (a *Article) Update(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {

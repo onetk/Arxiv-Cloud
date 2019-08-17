@@ -3,7 +3,7 @@ module github.com/voyagegroup/treasure-app
 go 1.12
 
 require (
-	cloud.google.com/go v0.43.0 // indirect
+	cloud.google.com/go v0.43.0
 	firebase.google.com/go v3.8.1+incompatible
 	github.com/go-sql-driver/mysql v1.4.0
 	github.com/gorilla/handlers v1.4.2
@@ -17,4 +17,6 @@ require (
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.10.0
 	golang.org/x/net v0.0.0-20190620200207-3b0461eec859
+	golang.org/x/text v0.3.2
+	google.golang.org/api v0.7.0
 )
