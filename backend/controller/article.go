@@ -181,20 +181,8 @@ func searchArxiv(keyword string, limit int) (map[int][]string, error) {
 		return nil, err
 	}
 
-	// var paper_num int
-	// var fs func(*html.Node)
-	// fs = func(n *html.Node) {
-	// 	if n.Type == html.ElementNode && n.Data == "opensearch:itemsPerPage" {
-	// 		paper_num, _ = strconv.Atoi(n.FirstChild.Data)
-	// 	}
-	// 	for cs := n.FirstChild; cs != nil; cs = cs.NextSibling {
-	// 		fs(cs)
-	// 	}
-	// }
-
-	// 未来の自分へ、修正して:pray:
 	var count int = 0
-	dictionary := make(map[int][]string) //,paper_num)
+	dictionary := make(map[int][]string)
 
 	var paper Paper
 	var f func(*html.Node)
