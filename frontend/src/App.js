@@ -232,10 +232,6 @@ class App extends Component {
     });
   }
 
-  // handleChange(e) {
-  //   this.setState({ text: e.target.value });
-  // }
-
   handleKeyDown(e) {
     if (e.key === "Enter") {
       e.preventDefault();

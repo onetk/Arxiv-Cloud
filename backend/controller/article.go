@@ -230,14 +230,14 @@ func (a *Article) CreatePaper(w http.ResponseWriter, r *http.Request) (int, inte
 	// ここでdictionaryに欠損ないか = DBに正しく入るかの処理をしたい
 	for j := 1; j < len(dictionary); j++ {
 		newArticle := &model.Article{Title: dictionary[j][0], Body: dictionary[j][2]}
-		fmt.Println(j, dictionary[j][0])
+		fmt.Println(j)
+		fmt.Println(dictionary[j][0])
 
 		// 認証無しはやばいので。。。 現状Getのクエリで対処している部分をPostでUserID付与の状態に
 
 		// if err := json.NewDecoder(r.Body).Decode(&newArticle); err != nil {
 		// 	return http.StatusBadRequest, nil, err
 		// }
-
 		// user, err := httputil.GetUserFromContext(r.Context())
 		// if err != nil {
 		// 	fmt.Println(err)
@@ -257,11 +257,11 @@ func (a *Article) CreatePaper(w http.ResponseWriter, r *http.Request) (int, inte
 			return http.StatusInternalServerError, nil, err
 		}
 
-		for j := 1; j < len(keywords); j++ {
-			splitKeys := strings.Split(keywords[j], ":")
+		for k := 1; k < len(keywords); k++ {
+			splitKeys := strings.Split(keywords[k], ":")
 			// fmt.Println(splitKeys[0])
-			// dictionary[j] = append(dictionary[j], splitKeys[0])
-			// fmt.Println(dictionary[j])
+			dictionary[j] = append(dictionary[j], splitKeys[0])
+			fmt.Println(dictionary[j])
 			// fmt.Println(dictionary[j][2+j])
 
 			newArticleTag := &model.ArticleTag{ArticleID: id, Tag: splitKeys[0]} //, Body: splitKeys[1]}
