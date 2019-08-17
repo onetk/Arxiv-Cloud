@@ -5,11 +5,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 
 	"cloud.google.com/go/translate"
 	"github.com/gorilla/mux"
@@ -141,6 +143,11 @@ func (a *Article) Index(w http.ResponseWriter, r *http.Request) (int, interface{
 	return http.StatusOK, articles, nil
 }
 
+type Result struct {
+	Keyphrase string `xml:"Keyphrase"`
+	Score     string `xml:"Score"`
+}
+
 func extractKeyword(text string) (interface{}, error) {
 
 	var keywords string
@@ -153,15 +160,37 @@ func extractKeyword(text string) (interface{}, error) {
 
 	params := url.Values{}
 	params.Add("appid", os.Getenv("YAHOO_KEYWORD_API"))
-	params.Add("sentence", url.QueryEscape(text))
+	// params.Add("sentence", url.QueryEscape(text))
+	params.Add("sentence", text)
 	params.Add("output", "json")
 
 	baseUrl.RawQuery = params.Encode()
+	// fmt.Println(baseUrl.String())
 
-	fmt.Printf("%q\n", baseUrl.String())
+	resp, err := http.Get(baseUrl.String())
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
 
-	// uri := "https://jlp.yahooapis.jp/KeyphraseService/V1/extract?" + strconv.Itoa(params)
-	// return JSON.load(open(uri).read)
+	doc, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	// やっっっっっばい
+	docStrs := string(doc)[1 : len(string(doc))-1]
+	docTrim := strings.Replace(docStrs, "\"", "`", -1)
+	docUni8, _ := strconv.Unquote("\"" + docTrim + "\"")
+	docReplace := strings.Replace(docUni8, "`", "", -1)
+	docArray := strings.Split(docReplace, ",")
+	for i := 0; i < len(docArray); i++ {
+		fmt.Println(strings.Split(docArray[i], ":"))
+
+	}
+
+	// unquoted, _ := strconv.Unquote("\u30dd\u30bc\u30c3\u30c8\u4ee3\u6570")
+	// fmt.Println(unquoted)
 
 	return keywords, nil
 }
@@ -169,8 +198,8 @@ func extractKeyword(text string) (interface{}, error) {
 func (a *Article) TagIndex(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
 
 	articles, err := repository.AllArticle(a.dbx)
-	fmt.Println(articles[1].Body)
-	keywords, _ := extractKeyword("text aiueo")
+	fmt.Println(articles[2].Body)
+	keywords, _ := extractKeyword(articles[2].Body)
 	fmt.Println(keywords)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
