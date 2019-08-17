@@ -207,43 +207,54 @@ func (a *Article) Create(w http.ResponseWriter, r *http.Request) (int, interface
 }
 
 func (a *Article) CreatePaper(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
-	// newArticle := &model.Article{}
 
 	vars := r.URL.Query()
 	keyword := vars["keyword"][0]
 
-	dictionary, err := searchArxiv(keyword, 5)
+	dictionary, err := searchArxiv(keyword, 3)
 
 	fmt.Println(dictionary[0][1])
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
 
-	// for i := 0; i < len(dictionary); i++ {
-	// 	translated, err := translateText("ja", dictionary[i][1])
-	// 	if err != nil {
-	// 		return http.StatusBadRequest, nil, err
-	// 	}
-	// 	dictionary[i] = []string{dictionary[i][0], dictionary[i][1], translated}
-	// }
+	for i := 0; i < len(dictionary); i++ {
+		translated, err := translateText("ja", dictionary[i][1])
+		if err != nil {
+			return http.StatusBadRequest, nil, err
+		}
+		dictionary[i] = []string{dictionary[i][0], dictionary[i][1], translated}
+	}
 
-	// if err != nil {
-	// 	return http.StatusBadRequest, nil, err
-	// }
+	if err != nil {
+		return http.StatusBadRequest, nil, err
+	}
 
-	// user, err := httputil.GetUserFromContext(r.Context())
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
-	// newArticle.UserID = &user.ID
+	// ここでdictionaryに欠損ないか = DBに正しく入るかの処理をしたい
 
-	// articleService := service.NewArticleService(a.dbx)
-	// id, err := articleService.Create(newArticle)
+	for j := 1; j < len(dictionary); j++ {
+		newArticle := &model.Article{Title: dictionary[j][0], Body: dictionary[j][2]}
 
-	// if err != nil {
-	// 	return http.StatusInternalServerError, nil, err
-	// }
-	// newArticle.ID = id
+		// 認証無しはやばいので。。。 現状Getのクエリで対処している部分をPostでUserID付与の状態に
+
+		// if err := json.NewDecoder(r.Body).Decode(&newArticle); err != nil {
+		// 	return http.StatusBadRequest, nil, err
+		// }
+
+		// user, err := httputil.GetUserFromContext(r.Context())
+		// if err != nil {
+		// 	fmt.Println(err)
+		// }
+		// newArticle.UserID = &user.ID
+
+		articleService := service.NewArticleService(a.dbx)
+		id, err := articleService.Create(newArticle)
+
+		if err != nil {
+			return http.StatusInternalServerError, nil, err
+		}
+		newArticle.ID = id
+	}
 
 	// fmt.Println(dictionary)
 	return http.StatusOK, dictionary, nil

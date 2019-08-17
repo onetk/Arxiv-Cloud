@@ -10,8 +10,16 @@ const successHandler = function(text) {
   for (let i = 0; i < lists.length; i++) {
     // console.log(lists[i]);
     items.push(
-      <div style="border-bottom:solid 1px lightgray; margin: auto;  padding:10px 5px 0 0; width:250px;">
-        {lists[i].id} {lists[i].title} {lists[i].body}
+      // <div style="border-bottom:solid 1px lightgray; margin: auto;  padding:10px 5px 0 0; width:250px;">
+      //   {lists[i].id} {lists[i].title} {lists[i].body}
+      // </div>
+      <div style="margin:auto; maigin-bottom:50px; width:800px;">
+        <div style="border-bottom:solid 1px lightgray; margin: auto;  padding:10px 5px 0 0; width:700px; font-size:15px;">
+          {lists[i].title}
+        </div>
+        <div style="margin: auto;  padding:10px 5px 0 0; width:700px; font-size:10px;">
+          {lists[i].body}
+        </div>
       </div>
     );
   }
@@ -33,7 +41,7 @@ const successPaperHandler = function(text) {
           {lists[i][0]}
         </div>
         <div style="margin: auto;  padding:10px 5px 0 0; width:700px; font-size:10px;">
-          {lists[i][1]}
+          {lists[i][2]}
         </div>
       </div>
     );
