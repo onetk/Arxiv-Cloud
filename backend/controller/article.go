@@ -168,35 +168,6 @@ func searchArxiv(keyword string, limit int) (map[int][]string, error) {
 	return dictionary, nil
 }
 
-// func translateWord(words_en string) (string, error) {
-
-// 	jsonStr := `{"contents": [` + words_en + `], "sourceLanguageCode": en, "targetLanguageCode": ja}`
-
-// 	req, err := http.NewRequest(
-// 		"POST",
-// 		"https://translation.googleapis.com/v3beta1/parent=projects/meta-gateway-223503:translateText",
-// 		bytes.NewBuffer([]byte(jsonStr)),
-// 	)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	req.Header.Set("Content-Type", "application/json")
-
-// 	client := &http.Client{}
-// 	resp, err := client.Do(req)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	defer resp.Body.Close()
-
-// 	doc, err := html.Parse(resp.Body)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	fmt.Println(doc)
-// 	return "", err
-// }
-
 func createClientWithKey() {
 	ctx := context.Background()
 
