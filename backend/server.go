@@ -97,7 +97,9 @@ func (s *Server) Route() *mux.Router {
 	r.Methods(http.MethodGet).Path("/articles/{id}").Handler(commonChain.Then(AppHandler{articleController.Show}))
 	r.Methods(http.MethodGet).Path("/articles/search/{tag}").Handler(commonChain.Then(AppHandler{articleController.SearchIndex}))
 
-	r.Methods(http.MethodGet).Path("/tag").Handler(commonChain.Then(AppHandler{articleController.TagIndex}))
+	// r.Methods(http.MethodGet).Path("/tag").Handler(commonChain.Then(AppHandler{articleController.TagCreate}))
+	r.Methods(http.MethodGet).Path("/tags").Handler(commonChain.Then(AppHandler{articleController.TagIndex}))
+
 	r.Methods(http.MethodGet).Path("/paper").Handler(commonChain.Then(AppHandler{articleController.CreatePaper}))
 
 	articleCommentController := controller.NewArticleComment(s.dbx)

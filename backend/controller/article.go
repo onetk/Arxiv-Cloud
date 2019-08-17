@@ -143,6 +143,16 @@ func (a *Article) Index(w http.ResponseWriter, r *http.Request) (int, interface{
 	return http.StatusOK, articles, nil
 }
 
+func (a *Article) TagIndex(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
+	tags, err := repository.AllTag(a.dbx)
+
+	if err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+
+	return http.StatusOK, tags, nil
+}
+
 type Result struct {
 	Keyphrase string `xml:"Keyphrase"`
 	Score     string `xml:"Score"`
@@ -189,7 +199,7 @@ func extractKeyword(text string) ([]string, error) {
 	return docArray, nil
 }
 
-func (a *Article) TagIndex(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
+func (a *Article) TagCreate(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
 
 	articles, err := repository.AllArticle(a.dbx)
 	if err != nil {

@@ -132,16 +132,18 @@ class App extends Component {
   }
 
   getAllTags() {
-    request("GET", "http://localhost:1991/tag")
+    request("GET", "http://localhost:1991/tags")
       .then(resp => {
-        this.setState({
-          message: successHandler(resp)
-        });
+        console.log(resp);
+        // this.setState({
+        //   message: successTagHandler(resp)
+        // });
       })
       .catch(error => {
-        this.setState({
-          errorMessage: errorHandler(error)
-        });
+        console.log(error);
+        // this.setState({
+        //   errorMessage: errorHandler(error)
+        // });
       });
   }
 
@@ -289,7 +291,7 @@ class App extends Component {
             Get Private Message
           </button> */}
           <button onClick={this.getAllArticles.bind(this)}>List message</button>
-          <button onClick={this.getAllTags.bind(this)}>Tag</button>
+          <button onClick={this.getAllTags.bind(this)}>List Tag</button>
           {/* <button onClick={this.postArticles.bind(this)}>Post</button> */}
           <button onClick={this.deleteArticles.bind(this)}>Delete All</button>
           <button onClick={firebase.logout}>Logout</button>

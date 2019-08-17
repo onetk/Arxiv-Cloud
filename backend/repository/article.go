@@ -9,10 +9,21 @@ import (
 )
 
 func AllArticle(db *sqlx.DB) ([]model.Article, error) {
+	fmt.Println("ok")
 	a := make([]model.Article, 0)
 	if err := db.Select(&a, `SELECT id, title, body, user_id FROM article`); err != nil {
 		return nil, err
 	}
+	return a, nil
+}
+
+func AllTag(db *sqlx.DB) ([]model.ArticleTag, error) {
+	a := make([]model.ArticleTag, 0)
+
+	if err := db.Select(&a, `SELECT id, article_id, tag FROM article_tag`); err != nil {
+		return nil, err
+	}
+
 	return a, nil
 }
 
