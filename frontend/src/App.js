@@ -33,7 +33,7 @@ const successPaperHandler = function(text) {
           {lists[i][0]}
         </div>
         <div style="margin: auto;  padding:10px 5px 0 0; width:700px; font-size:10px;">
-          {lists[i][2]}
+          {lists[i][1]}
         </div>
       </div>
     );

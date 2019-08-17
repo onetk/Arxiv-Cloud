@@ -24,6 +24,11 @@ import (
 	"github.com/voyagegroup/treasure-app/service"
 )
 
+type Paper struct {
+	Title    string
+	Abstract string
+}
+
 type Article struct {
 	dbx *sqlx.DB
 }
@@ -46,86 +51,6 @@ func NewArticleComment(dbx *sqlx.DB) *ArticleComment {
 
 func NewArticleTag(dbx *sqlx.DB) *ArticleTag {
 	return &ArticleTag{dbx: dbx}
-}
-
-// 返り値のintは status code
-func (a *Article) Index(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
-	articles, err := repository.AllArticle(a.dbx)
-	if err != nil {
-		return http.StatusInternalServerError, nil, err
-	}
-	// fmt.Println(reflect.TypeOf(articles))
-	return http.StatusOK, articles, nil
-}
-
-func (a *Article) SearchIndex(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
-	vars := mux.Vars(r)
-	tag, ok := vars["tag"]
-	if !ok {
-		return http.StatusBadRequest, nil, &httputil.HTTPError{Message: "invalid path parameter"}
-
-	}
-
-	articles, err := repository.SearchArticle(a.dbx, tag)
-	if err != nil && err == sql.ErrNoRows {
-		return http.StatusNotFound, nil, err
-	} else if err != nil {
-		return http.StatusInternalServerError, nil, err
-	}
-
-	return http.StatusOK, articles, nil
-}
-
-func (a *Article) Show(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
-	vars := mux.Vars(r)
-	id, ok := vars["id"]
-	if !ok {
-		return http.StatusBadRequest, nil, &httputil.HTTPError{Message: "invalid path parameter"}
-	}
-	fmt.Println("show")
-	aid, err := strconv.ParseInt(id, 10, 64)
-	if err != nil {
-		return http.StatusBadRequest, nil, err
-	}
-
-	article, err := repository.FindArticle(a.dbx, aid)
-	if err != nil && err == sql.ErrNoRows {
-		return http.StatusNotFound, nil, err
-	} else if err != nil {
-		return http.StatusInternalServerError, nil, err
-	}
-
-	return http.StatusCreated, article, nil
-}
-
-func (a *Article) Create(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
-	newArticle := &model.Article{}
-	fmt.Println("tes")
-
-	if err := json.NewDecoder(r.Body).Decode(&newArticle); err != nil {
-		return http.StatusBadRequest, nil, err
-	}
-
-	user, err := httputil.GetUserFromContext(r.Context())
-	if err != nil {
-		fmt.Println(err)
-	}
-	newArticle.UserID = &user.ID
-
-	articleService := service.NewArticleService(a.dbx)
-	fmt.Println(newArticle)
-	id, err := articleService.Create(newArticle)
-	if err != nil {
-		return http.StatusInternalServerError, nil, err
-	}
-	newArticle.ID = id
-
-	return http.StatusCreated, newArticle, nil
-}
-
-type Paper struct {
-	Title    string
-	Abstract string
 }
 
 func searchArxiv(keyword string, limit int) (map[int][]string, error) {
@@ -206,7 +131,84 @@ func translateText(targetLanguage, text string) (string, error) {
 	return resp[0].Text, nil
 }
 
+// 返り値のintは status code
+func (a *Article) Index(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
+	articles, err := repository.AllArticle(a.dbx)
+	if err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+	// fmt.Println(reflect.TypeOf(articles))
+	return http.StatusOK, articles, nil
+}
+
+func (a *Article) SearchIndex(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
+	vars := mux.Vars(r)
+	tag, ok := vars["tag"]
+	if !ok {
+		return http.StatusBadRequest, nil, &httputil.HTTPError{Message: "invalid path parameter"}
+
+	}
+
+	articles, err := repository.SearchArticle(a.dbx, tag)
+	if err != nil && err == sql.ErrNoRows {
+		return http.StatusNotFound, nil, err
+	} else if err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+
+	return http.StatusOK, articles, nil
+}
+
+func (a *Article) Show(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
+	vars := mux.Vars(r)
+	id, ok := vars["id"]
+	if !ok {
+		return http.StatusBadRequest, nil, &httputil.HTTPError{Message: "invalid path parameter"}
+	}
+	fmt.Println("show")
+	aid, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		return http.StatusBadRequest, nil, err
+	}
+
+	article, err := repository.FindArticle(a.dbx, aid)
+	if err != nil && err == sql.ErrNoRows {
+		return http.StatusNotFound, nil, err
+	} else if err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+
+	return http.StatusCreated, article, nil
+}
+
+func (a *Article) Create(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
+	newArticle := &model.Article{}
+	fmt.Println("tes")
+
+	if err := json.NewDecoder(r.Body).Decode(&newArticle); err != nil {
+		return http.StatusBadRequest, nil, err
+	}
+
+	user, err := httputil.GetUserFromContext(r.Context())
+	if err != nil {
+		fmt.Println(err)
+	}
+	newArticle.UserID = &user.ID
+
+	articleService := service.NewArticleService(a.dbx)
+	fmt.Println(newArticle)
+	id, err := articleService.Create(newArticle)
+	if err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+	newArticle.ID = id
+
+	return http.StatusCreated, newArticle, nil
+}
+
 func (a *Article) CreatePaper(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
+	// newArticle := &model.Article{}
+
 	vars := r.URL.Query()
 	keyword := vars["keyword"][0]
 
@@ -216,20 +218,34 @@ func (a *Article) CreatePaper(w http.ResponseWriter, r *http.Request) (int, inte
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
-	// fmt.Println(len(dictionary))
-	for i := 0; i < len(dictionary); i++ {
-		translated, err := translateText("ja", dictionary[i][1])
-		if err != nil {
-			return http.StatusBadRequest, nil, err
-		}
-		dictionary[i] = []string{dictionary[i][0], dictionary[i][1], translated}
-	}
 
-	if err != nil {
-		return http.StatusBadRequest, nil, err
-	}
-	// fmt.Println(translated)
-	fmt.Println(dictionary)
+	// for i := 0; i < len(dictionary); i++ {
+	// 	translated, err := translateText("ja", dictionary[i][1])
+	// 	if err != nil {
+	// 		return http.StatusBadRequest, nil, err
+	// 	}
+	// 	dictionary[i] = []string{dictionary[i][0], dictionary[i][1], translated}
+	// }
+
+	// if err != nil {
+	// 	return http.StatusBadRequest, nil, err
+	// }
+
+	// user, err := httputil.GetUserFromContext(r.Context())
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	// newArticle.UserID = &user.ID
+
+	// articleService := service.NewArticleService(a.dbx)
+	// id, err := articleService.Create(newArticle)
+
+	// if err != nil {
+	// 	return http.StatusInternalServerError, nil, err
+	// }
+	// newArticle.ID = id
+
+	// fmt.Println(dictionary)
 	return http.StatusOK, dictionary, nil
 }
 
