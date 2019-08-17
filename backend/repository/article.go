@@ -65,13 +65,13 @@ SELECT id, title, body FROM article WHERE id = ?
 
 func CreateArticle(db *sqlx.Tx, a *model.Article) (sql.Result, error) {
 	stmt, err := db.Prepare(`
-INSERT INTO article (user_id, title, body) VALUES (?, ?, ?)
+INSERT INTO article (user_id, title, body, tag) VALUES (?, ?, ?,?)
 `)
 	if err != nil {
 		return nil, err
 	}
 	defer stmt.Close()
-	return stmt.Exec(a.UserID, a.Title, a.Body)
+	return stmt.Exec(a.UserID, a.Title, a.Body, "")
 }
 
 func UpdateArticle(db *sqlx.Tx, id int64, a *model.Article) (sql.Result, error) {

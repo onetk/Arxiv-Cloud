@@ -65,26 +65,28 @@ func (a *Article) Index(w http.ResponseWriter, r *http.Request) (int, interface{
 		return http.StatusInternalServerError, nil, err
 	}
 
-	// tags, err := repository.AllTag(a.dbx)
+	tags, err := repository.AllTag(a.dbx)
 
-	// if err != nil {
-	// 	return http.StatusInternalServerError, nil, err
-	// }
+	if err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
 
-	// var temp int64 = -1
-	// var count int = 0
-	// var concat []string
+	var temp int64 = -1
+	var count int = 0
+	var concat string
 
-	// for i := 0; i < len(tags); i++ {
-	// 	if tags[i].ArticleID != temp {
-	// 		concat[count] = tags[i].Tag + "," + tags[i+1].Tag + "," + tags[i+2].Tag
-	// 		temp = tags[i].ArticleID
-	// 		count++
-	// 		fmt.Println(tags[i].ArticleID, concat)
-	// 		// articles.Tag = &concat[0]
-	// 	}
+	fmt.Println(len(tags))
 
-	// }
+	for i := 0; i < len(tags)-3; i++ {
+		if tags[i].ArticleID != temp {
+			concat = tags[i].Tag + "," + tags[i+1].Tag + "," + tags[i+2].Tag
+			temp = tags[i].ArticleID
+			count++
+			fmt.Println(tags[i].ArticleID, concat)
+			// articles.Tag = &concat
+		}
+
+	}
 
 	return http.StatusOK, articles, nil
 }
