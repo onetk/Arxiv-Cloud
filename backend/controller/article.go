@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -19,7 +18,6 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/net/html"
 	"golang.org/x/text/language"
-	"google.golang.org/api/option"
 
 	"github.com/voyagegroup/treasure-app/httputil"
 	"github.com/voyagegroup/treasure-app/model"
@@ -30,6 +28,11 @@ import (
 type Paper struct {
 	Title    string
 	Abstract string
+}
+
+type Result struct {
+	Keyphrase string `xml:"Keyphrase"`
+	Score     string `xml:"Score"`
 }
 
 type Article struct {
@@ -54,6 +57,25 @@ func NewArticleComment(dbx *sqlx.DB) *ArticleComment {
 
 func NewArticleTag(dbx *sqlx.DB) *ArticleTag {
 	return &ArticleTag{dbx: dbx}
+}
+
+func (a *Article) Index(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
+	articles, err := repository.AllArticle(a.dbx)
+	if err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+	// fmt.Println(reflect.TypeOf(articles))
+	return http.StatusOK, articles, nil
+}
+
+func (a *Article) TagIndex(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
+	tags, err := repository.AllTag(a.dbx)
+
+	if err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+
+	return http.StatusOK, tags, nil
 }
 
 func searchArxiv(keyword string, limit int) (map[int][]string, error) {
@@ -96,23 +118,6 @@ func searchArxiv(keyword string, limit int) (map[int][]string, error) {
 	return dictionary, nil
 }
 
-func createClientWithKey() {
-	ctx := context.Background()
-
-	apiKey := os.Getenv("GOOGLE_CLOUD_API_KEY")
-	client, err := translate.NewClient(ctx, option.WithAPIKey(apiKey))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	resp, err := client.Translate(ctx, []string{"Hello, world!"}, language.Russian, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Printf("%#v", resp)
-}
-
 func translateText(targetLanguage, text string) (string, error) {
 	ctx := context.Background()
 
@@ -132,30 +137,6 @@ func translateText(targetLanguage, text string) (string, error) {
 		return "", err
 	}
 	return resp[0].Text, nil
-}
-
-func (a *Article) Index(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
-	articles, err := repository.AllArticle(a.dbx)
-	if err != nil {
-		return http.StatusInternalServerError, nil, err
-	}
-	// fmt.Println(reflect.TypeOf(articles))
-	return http.StatusOK, articles, nil
-}
-
-func (a *Article) TagIndex(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
-	tags, err := repository.AllTag(a.dbx)
-
-	if err != nil {
-		return http.StatusInternalServerError, nil, err
-	}
-
-	return http.StatusOK, tags, nil
-}
-
-type Result struct {
-	Keyphrase string `xml:"Keyphrase"`
-	Score     string `xml:"Score"`
 }
 
 func extractKeyword(text string) ([]string, error) {
@@ -191,10 +172,6 @@ func extractKeyword(text string) ([]string, error) {
 	docUni8, _ := strconv.Unquote("\"" + docTrim + "\"")
 	docReplace := strings.Replace(docUni8, "`", "", -1)
 	docArray := strings.Split(docReplace, ",")
-	// for i := 0; i < len(docArray); i++ {
-	// 	fmt.Println(strings.Split(docArray[i], ":"))
-
-	// }
 
 	return docArray, nil
 }
@@ -213,7 +190,6 @@ func (a *Article) TagCreate(w http.ResponseWriter, r *http.Request) (int, interf
 
 	for j := 1; j < len(keywords); j++ {
 		splitKeys := strings.Split(keywords[j], ":")
-		// fmt.Println(splitKeys[0])
 		newArticleTag := &model.ArticleTag{Tag: splitKeys[0]} //, Body: splitKeys[1]}
 
 		articleTagService := service.NewArticleTagService(a.dbx)
@@ -226,6 +202,85 @@ func (a *Article) TagCreate(w http.ResponseWriter, r *http.Request) (int, interf
 	}
 
 	return http.StatusOK, articles, nil
+}
+
+func (a *Article) CreatePaper(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
+
+	vars := r.URL.Query()
+	keyword := vars["keyword"][0]
+
+	dictionary, err := searchArxiv(keyword, 3)
+
+	if err != nil {
+		return http.StatusBadRequest, nil, err
+	}
+
+	for i := 0; i < len(dictionary); i++ {
+		translated, err := translateText("ja", dictionary[i][1])
+		if err != nil {
+			return http.StatusBadRequest, nil, err
+		}
+		dictionary[i] = []string{dictionary[i][0], dictionary[i][1], translated}
+	}
+
+	if err != nil {
+		return http.StatusBadRequest, nil, err
+	}
+
+	// ここでdictionaryに欠損ないか = DBに正しく入るかの処理をしたい
+	for j := 1; j < len(dictionary); j++ {
+		newArticle := &model.Article{Title: dictionary[j][0], Body: dictionary[j][2]}
+		fmt.Println(j, dictionary[j][0])
+
+		// 認証無しはやばいので。。。 現状Getのクエリで対処している部分をPostでUserID付与の状態に
+
+		// if err := json.NewDecoder(r.Body).Decode(&newArticle); err != nil {
+		// 	return http.StatusBadRequest, nil, err
+		// }
+
+		// user, err := httputil.GetUserFromContext(r.Context())
+		// if err != nil {
+		// 	fmt.Println(err)
+		// }
+		// newArticle.UserID = &user.ID
+
+		articleService := service.NewArticleService(a.dbx)
+		id, err := articleService.Create(newArticle)
+
+		if err != nil {
+			return http.StatusInternalServerError, nil, err
+		}
+		newArticle.ID = id
+
+		keywords, err := extractKeyword(dictionary[j][2])
+		if err != nil {
+			return http.StatusInternalServerError, nil, err
+		}
+
+		for j := 1; j < len(keywords); j++ {
+			splitKeys := strings.Split(keywords[j], ":")
+			// fmt.Println(splitKeys[0])
+			// dictionary[j] = append(dictionary[j], splitKeys[0])
+			// fmt.Println(dictionary[j])
+			// fmt.Println(dictionary[j][2+j])
+
+			newArticleTag := &model.ArticleTag{ArticleID: id, Tag: splitKeys[0]} //, Body: splitKeys[1]}
+
+			articleTagService := service.NewArticleTagService(a.dbx)
+			id, err := articleTagService.CreateArticleTag(newArticleTag)
+
+			if err != nil {
+				return http.StatusInternalServerError, nil, err
+			}
+			newArticleTag.ID = id
+		}
+		fmt.Println("ok")
+
+	}
+
+	fmt.Println("ok2")
+
+	return http.StatusOK, dictionary, nil
 }
 
 func (a *Article) SearchIndex(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
@@ -291,80 +346,6 @@ func (a *Article) Create(w http.ResponseWriter, r *http.Request) (int, interface
 	newArticle.ID = id
 
 	return http.StatusCreated, newArticle, nil
-}
-
-func (a *Article) CreatePaper(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
-
-	vars := r.URL.Query()
-	keyword := vars["keyword"][0]
-
-	dictionary, err := searchArxiv(keyword, 3)
-
-	// fmt.Println(dictionary[0][1])
-	if err != nil {
-		return http.StatusBadRequest, nil, err
-	}
-
-	for i := 0; i < len(dictionary); i++ {
-		translated, err := translateText("ja", dictionary[i][1])
-		if err != nil {
-			return http.StatusBadRequest, nil, err
-		}
-		dictionary[i] = []string{dictionary[i][0], dictionary[i][1], translated}
-	}
-
-	if err != nil {
-		return http.StatusBadRequest, nil, err
-	}
-
-	// ここでdictionaryに欠損ないか = DBに正しく入るかの処理をしたい
-
-	for j := 1; j < len(dictionary); j++ {
-		newArticle := &model.Article{Title: dictionary[j][0], Body: dictionary[j][2]}
-
-		// 認証無しはやばいので。。。 現状Getのクエリで対処している部分をPostでUserID付与の状態に
-
-		// if err := json.NewDecoder(r.Body).Decode(&newArticle); err != nil {
-		// 	return http.StatusBadRequest, nil, err
-		// }
-
-		// user, err := httputil.GetUserFromContext(r.Context())
-		// if err != nil {
-		// 	fmt.Println(err)
-		// }
-		// newArticle.UserID = &user.ID
-
-		articleService := service.NewArticleService(a.dbx)
-		id, err := articleService.Create(newArticle)
-
-		if err != nil {
-			return http.StatusInternalServerError, nil, err
-		}
-		newArticle.ID = id
-
-		keywords, err := extractKeyword(dictionary[j][2])
-		if err != nil {
-			return http.StatusInternalServerError, nil, err
-		}
-
-		for j := 1; j < len(keywords); j++ {
-			splitKeys := strings.Split(keywords[j], ":")
-			// fmt.Println(splitKeys[0])
-			newArticleTag := &model.ArticleTag{ArticleID: id, Tag: splitKeys[0]} //, Body: splitKeys[1]}
-
-			articleTagService := service.NewArticleTagService(a.dbx)
-			id, err := articleTagService.CreateArticleTag(newArticleTag)
-
-			if err != nil {
-				return http.StatusInternalServerError, nil, err
-			}
-			newArticleTag.ID = id
-		}
-
-	}
-
-	// fmt.Println(dictionary)
-	return http.StatusOK, dictionary, nil
 }
 
 func (a *Article) Update(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
