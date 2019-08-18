@@ -98,7 +98,17 @@ func (a *Article) TagIndex(w http.ResponseWriter, r *http.Request) (int, interfa
 		return http.StatusInternalServerError, nil, err
 	}
 
-	return http.StatusOK, tags, nil
+	m := map[string]int{}
+	for i := 0; i < len(tags); i++ {
+		m[tags[i].Tag] = m[tags[i].Tag] + 1
+	}
+
+	// for key, count := range m {
+	// 	fmt.Print(key, count)
+	// 	fmt.Print(" ")
+	// }
+	// return http.StatusOK, tags, nil
+	return http.StatusOK, m, nil
 }
 
 func searchArxiv(keyword string, limit int) (map[int][]string, error) {

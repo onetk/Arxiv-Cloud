@@ -1,7 +1,4 @@
 import React, { Component } from "react";
-// import logo from "./logo.svg";
-// import "./App.css";
-
 import firebase from "./firebase";
 import { getPrivateMessage } from "./api";
 
@@ -9,6 +6,17 @@ import TagCloud from "react-tag-cloud";
 import randomColor from "randomcolor";
 
 // const API_ENDPOINT = process.env.BACKEND_API_BASE;
+
+const styles = {
+  large: {
+    fontSize: 60,
+    fontWeight: "bold"
+  },
+  small: {
+    opacity: 0.7,
+    fontSize: 16
+  }
+};
 
 class MyCloud extends Component {
   render() {
@@ -33,6 +41,17 @@ class MyCloud extends Component {
     );
   }
 }
+
+const successTagHandler = function(text) {
+  const lists = JSON.parse(text);
+  const items = [];
+
+  for (var key in lists) {
+    console.log(key, lists[key]);
+  }
+
+  return items;
+};
 
 const successHandler = function(text) {
   const lists = JSON.parse(text);
@@ -162,22 +181,22 @@ class App extends Component {
   getAllTags() {
     request("GET", "http://localhost:1991/tags")
       .then(resp => {
-        const tags = [];
-        var tagDB = JSON.parse(resp);
-        for (let i = 0; i < tagDB.length; i++) {
-          // console.log(tagDB[i].tag);
-          tags.push(tagDB[i].tag);
-        }
-        console.log(tags.join(","));
-        // this.setState({
-        //   message: successTagHandler(resp)
-        // });
+        // const tags = [];
+        // var tagDB = JSON.parse(resp);
+        // for (let i = 0; i < tagDB.length; i++) {
+        //   tags.push(tagDB[i].tag);
+        // }
+        // console.log(tags.join(","));
+
+        this.setState({
+          message: successTagHandler(resp)
+        });
       })
       .catch(error => {
-        console.log(error);
-        // this.setState({
-        //   errorMessage: errorHandler(error)
-        // });
+        // console.log(error);
+        this.setState({
+          errorMessage: errorHandler(error)
+        });
       });
   }
 
