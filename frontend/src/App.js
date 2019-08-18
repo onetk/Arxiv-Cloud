@@ -115,7 +115,6 @@ class App extends Component {
       message: "",
       errorMessage: "",
       token: "",
-      text: "",
       cloud: ""
     };
   }
@@ -230,14 +229,10 @@ class App extends Component {
   handleKeyDown(e) {
     if (e.key === "Enter") {
       e.preventDefault();
-
-      this.setState({
-        text: e.target.value
-      });
-      console.log(this.state.text, "ok");
+      console.log(e.target.value, "ok");
 
       const params = new URLSearchParams();
-      params.set("keyword", this.state.text);
+      params.set("keyword", e.target.value);
 
       request("GET", "http://localhost:1991/paper?" + params.toString())
         .then(resp => {
@@ -258,16 +253,14 @@ class App extends Component {
   componentDidMount() {
     firebase.auth().onAuthStateChanged(user => {
       if (user) {
+        console.log(JSON.stringify(user));
+        console.log(this.state);
         this.setState({ user });
-      } else {
-        this.setState({
-          user: null
-        });
       }
     });
-    setInterval(() => {
-      this.forceUpdate();
-    }, 3000);
+    // setInterval(() => {
+    //   this.forceUpdate();
+    // }, 3000);
   }
 
   render(props, state) {
