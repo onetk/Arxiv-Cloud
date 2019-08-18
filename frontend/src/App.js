@@ -5,8 +5,6 @@ import { getPrivateMessage } from "./api";
 import TagCloud from "react-tag-cloud";
 import randomColor from "randomcolor";
 
-// import CloudItem from "./CloudItem";
-
 // const API_ENDPOINT = process.env.BACKEND_API_BASE;
 
 const styles = {
@@ -83,7 +81,8 @@ const successTagHandler = function(text) {
       keywords.push(<div style={styles.large}>{key}</div>);
     }
   }
-
+  // eact-tag-cloud -> https://github.com/IjzerenHein/react-tag-cloud
+  // 試す場所 -> https://stackblitz.com/edit/react-tag-cloud?file=App.js
   return keywords;
 };
 
