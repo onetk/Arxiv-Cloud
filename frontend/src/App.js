@@ -5,52 +5,25 @@ import { getPrivateMessage } from "./api";
 import TagCloud from "react-tag-cloud";
 import randomColor from "randomcolor";
 
+// import CloudItem from "./CloudItem";
+
 // const API_ENDPOINT = process.env.BACKEND_API_BASE;
 
 const styles = {
   large: {
     fontSize: 60,
-    fontWeight: "bold"
+    fontWeight: "bold",
+    fontFamily: "sans-serif",
+    color: () =>
+      randomColor({
+        hue: "blue"
+      }),
+    padding: 5
   },
   small: {
     opacity: 0.7,
     fontSize: 16
   }
-};
-
-class MyCloud extends Component {
-  render() {
-    return (
-      <TagCloud
-        style={{
-          fontFamily: "sans-serif",
-          fontSize: 30,
-          fontWeight: "bold",
-          fontStyle: "italic",
-          color: () => randomColor(),
-          padding: 5,
-          width: "100%",
-          height: "100%"
-        }}
-      >
-        <div style={{ fontSize: 50 }}>react</div>
-        <div style={{ color: "green" }}>tag</div>
-        <div rotate={90}>cloud</div>
-        ...
-      </TagCloud>
-    );
-  }
-}
-
-const successTagHandler = function(text) {
-  const lists = JSON.parse(text);
-  const items = [];
-
-  for (var key in lists) {
-    console.log(key, lists[key]);
-  }
-
-  return items;
 };
 
 const successHandler = function(text) {
@@ -80,7 +53,6 @@ const successPaperHandler = function(text) {
   const lists = JSON.parse(text);
   console.log(lists);
   const items = [];
-  // for (let i = 0; i < Object.keys(lists).length; i++) {
   for (let i = 1; i < Object.keys(lists).length; i++) {
     items.push(
       <div className="top_style">
@@ -94,6 +66,25 @@ const successPaperHandler = function(text) {
   }
 
   return items;
+};
+
+const successTagHandler = function(text) {
+  const lists = JSON.parse(text);
+  const keywords = [];
+  for (var key in lists) {
+    if (lists[key] === 1) {
+      // console.log(key, 1);
+      keywords.push(<div style={styles.small}>{key}</div>);
+    } else if (lists[key] > 2) {
+      // console.log(key, 2);
+      keywords.push(<div>{key}</div>);
+    } else {
+      // console.log(key, 3);
+      keywords.push(<div style={styles.large}>{key}</div>);
+    }
+  }
+
+  return keywords;
 };
 
 function request(method, url) {
@@ -116,6 +107,7 @@ function request(method, url) {
     throw new Error("5xx error");
   });
 }
+
 class App extends Component {
   constructor() {
     super();
@@ -124,7 +116,8 @@ class App extends Component {
       message: "",
       errorMessage: "",
       token: "",
-      text: ""
+      text: "",
+      cloud: ""
     };
   }
 
@@ -132,18 +125,6 @@ class App extends Component {
     if (this.state.token === "") {
       this.state.token = await firebase.auth().currentUser.getIdToken();
     }
-  }
-
-  componentDidMount() {
-    firebase.auth().onAuthStateChanged(user => {
-      if (user) {
-        this.setState({ user });
-      } else {
-        this.setState({
-          user: null
-        });
-      }
-    });
   }
 
   getPrivateMessage() {
@@ -258,7 +239,6 @@ class App extends Component {
 
       const params = new URLSearchParams();
       params.set("keyword", this.state.text);
-      // console.log("http://localhost:1991/paper?" + params.toString());
 
       request("GET", "http://localhost:1991/paper?" + params.toString())
         .then(resp => {
@@ -274,6 +254,21 @@ class App extends Component {
           });
         });
     }
+  }
+
+  componentDidMount() {
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) {
+        this.setState({ user });
+      } else {
+        this.setState({
+          user: null
+        });
+      }
+    });
+    setInterval(() => {
+      this.forceUpdate();
+    }, 3000);
   }
 
   render(props, state) {
@@ -297,6 +292,26 @@ class App extends Component {
             onKeyDown={this.handleKeyDown.bind(this)}
           />
           <img src="search.png" alt="search icon" className="search-icon" />
+        </div>
+
+        <div className="app-outer">
+          <div className="app-inner">
+            <TagCloud
+              className="tag-cloud"
+              style={{
+                fontFamily: "sans-serif",
+                //fontSize: () => Math.round(Math.random() * 50) + 16,
+                fontSize: 30,
+                color: () =>
+                  randomColor({
+                    hue: "blue"
+                  }),
+                padding: 5
+              }}
+            >
+              {this.state.cloud}
+            </TagCloud>
+          </div>
         </div>
 
         <div className="state_messages">{this.state.message}</div>
