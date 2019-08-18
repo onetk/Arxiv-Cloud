@@ -1,8 +1,38 @@
-import { h, Component } from "preact";
-import firebase from "./firebase";
-import { getPrivateMessage, getPublicMessage } from "./api";
+import React, { Component } from "react";
+// import logo from "./logo.svg";
+// import "./App.css";
 
-const API_ENDPOINT = process.env.BACKEND_API_BASE;
+import firebase from "./firebase";
+import { getPrivateMessage } from "./api";
+
+import TagCloud from "react-tag-cloud";
+import randomColor from "randomcolor";
+
+// const API_ENDPOINT = process.env.BACKEND_API_BASE;
+
+class MyCloud extends Component {
+  render() {
+    return (
+      <TagCloud
+        style={{
+          fontFamily: "sans-serif",
+          fontSize: 30,
+          fontWeight: "bold",
+          fontStyle: "italic",
+          color: () => randomColor(),
+          padding: 5,
+          width: "100%",
+          height: "100%"
+        }}
+      >
+        <div style={{ fontSize: 50 }}>react</div>
+        <div style={{ color: "green" }}>tag</div>
+        <div rotate={90}>cloud</div>
+        ...
+      </TagCloud>
+    );
+  }
+}
 
 const successHandler = function(text) {
   const lists = JSON.parse(text);
@@ -11,15 +41,11 @@ const successHandler = function(text) {
   for (let i = 0; i < lists.length; i++) {
     // console.log(lists[i]);
     items.push(
-      // <div style="border-bottom:solid 1px lightgray; margin: auto;  padding:10px 5px 0 0; width:250px;">
-      //   {lists[i].id} {lists[i].title} {lists[i].body}
-      // </div>
-      <div style="margin:auto; maigin-bottom:50px; width:800px;">
-        <div style="border-bottom:solid 1px lightgray; margin: auto;  padding:10px 5px 0 0; width:700px; font-size:15px;">
-          {lists[i].title}
-        </div>
-        <div style="margin: auto;  padding:10px 5px 0 0; width:700px; font-size:10px;">
-          {lists[i].body}
+      <div className="top_style">
+        <div className="article_title">{lists[i].title}</div>
+        <div className="article_body">{lists[i].body}</div>
+        <div className="article_tag">
+          #{lists[i].tag}hoge #{lists[i].tag}fuga #{lists[i].tag}piyo
         </div>
       </div>
     );
@@ -38,14 +64,10 @@ const successPaperHandler = function(text) {
   // for (let i = 0; i < Object.keys(lists).length; i++) {
   for (let i = 1; i < Object.keys(lists).length; i++) {
     items.push(
-      <div style="margin:auto; maigin-bottom:50px; width:800px;">
-        <div style="border-bottom:solid 1px lightgray; margin: auto;  padding:10px 5px 0 0; width:700px; font-size:15px;">
-          {lists[i][0]}
-        </div>
-        <div style="margin: auto;  padding:10px 5px 0 0; width:700px; font-size:10px;">
-          {lists[i][2]}
-        </div>
-        <div style="margin: auto;  padding:0px 10px 0 0; width:700px; font-size:10px; text-align:right;">
+      <div className="top_style">
+        <div className="article_title">{lists[i][0]}</div>
+        <div className="article_body">{lists[i][2]}</div>
+        <div className="article_tag">
           #{lists[i][3]} #{lists[i][4]} #{lists[i][5]}
         </div>
       </div>
@@ -58,7 +80,7 @@ const successPaperHandler = function(text) {
 function request(method, url) {
   return fetch(url).then(function(res) {
     if (res.ok) {
-      if (res.status == 200 && method == "PUT") {
+      if (res.status === 200 && method === "PUT") {
         return "success!!";
       }
 
@@ -75,15 +97,16 @@ function request(method, url) {
     throw new Error("5xx error");
   });
 }
-
 class App extends Component {
   constructor() {
     super();
-    this.state.user = null;
-    this.state.message = "";
-    this.state.errorMessage = "";
-    this.state.token = "";
-    this.state.text = "";
+    this.state = {
+      user: null,
+      message: "",
+      errorMessage: "",
+      token: "",
+      text: ""
+    };
   }
 
   async getToken() {
@@ -158,40 +181,8 @@ class App extends Component {
       });
   }
 
-  // getPapers() {
-  //   request("GET", "http://localhost:1991/articles/paper")
-  //     .then(resp => {
-  //       this.setState({
-  //         message: successHandler(resp)
-  //       });
-  //     })
-  //     .catch(error => {
-  //       this.setState({
-  //         errorMessage: errorHandler(error)
-  //       });
-  //     });
-
-  // request(
-  //   "GET",
-  //   "http://export.arxiv.org/api/query?search_query=all:" +
-  //     "deeplearning" +
-  //     "&start=0&max_results=100"
-  // )
-  //   .then(resp => {
-  //     this.setState({
-  //       message: successPaperHandler(resp)
-  //     });
-  //   })
-  //   .catch(error => {
-  //     this.setState({
-  //       errorMessage: errorHandler(error)
-  //     });
-  //   });
-  // }
-
   async getPapers() {
     await this.getToken();
-
     return fetch(`http://localhost:1991/articles/paper`, {
       method: "POST",
       headers: {
@@ -199,7 +190,6 @@ class App extends Component {
         Authorization: `Bearer ${this.state.token}`
       },
       body: JSON.stringify({ title: "ok", body: "google" })
-      // body: JSON.stringify({ keyword: "google" })
     })
       .then(resp => {
         console.log(resp);
@@ -228,7 +218,6 @@ class App extends Component {
 
   async postArticles() {
     await this.getToken();
-
     return fetch(`http://localhost:1991/articles`, {
       method: "POST",
       headers: {
@@ -269,31 +258,31 @@ class App extends Component {
   }
 
   render(props, state) {
-    if (state.user === null) {
+    if (this.state.user === null) {
       return <button onClick={firebase.login}>Please login</button>;
     }
 
     return (
       <div>
-        <h2 class="title word">
-          <a class="title" href="/">
+        <h2 className="title word">
+          <a className="title" href="/">
             Arxiv Cloud
           </a>
         </h2>
 
-        <div class="search-form">
+        <div className="search-form">
           <textarea
-            class="search-text"
+            className="search-text"
             placeholder="Search"
             // onChange={this.handleChange.bind(this)}
             onKeyDown={this.handleKeyDown.bind(this)}
           />
-          <img src="search.png" class="search-icon" />
+          <img src="search.png" alt="search icon" className="search-icon" />
         </div>
 
-        <div class="state_messages">{state.message}</div>
-        <div style="margin:auto; width:280px;">
-          <p style="color:red;">{state.errorMessage}</p>
+        <div className="state_messages">{this.state.message}</div>
+        <div className="button_div">
+          <p className="state_err_message">{this.state.errorMessage}</p>
           {/* <button onClick={this.getPrivateMessage.bind(this)}>
             Get Private Message
           </button> */}
