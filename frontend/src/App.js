@@ -139,7 +139,13 @@ class App extends Component {
   getAllTags() {
     request("GET", "http://localhost:1991/tags")
       .then(resp => {
-        console.log(resp);
+        const tags = [];
+        var tagDB = JSON.parse(resp);
+        for (let i = 0; i < tagDB.length; i++) {
+          // console.log(tagDB[i].tag);
+          tags.push(tagDB[i].tag);
+        }
+        console.log(tags.join(","));
         // this.setState({
         //   message: successTagHandler(resp)
         // });

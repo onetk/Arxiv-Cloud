@@ -177,7 +177,7 @@ func extractKeyword(text string) ([]string, error) {
 	params.Add("output", "json")
 
 	baseUrl.RawQuery = params.Encode()
-
+	fmt.Println(baseUrl.String())
 	resp, err := http.Get(baseUrl.String())
 	if err != nil {
 		return nil, err
