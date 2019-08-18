@@ -27,7 +27,7 @@ body {
   text-align: center;
   margin: auto;
   margin-top: 50px;
-  font-size: 30px;
+  font-size: 35px;
   text-decoration: none;
   color: black;
   cursor: default;
@@ -49,7 +49,7 @@ body {
 .search-form {
   position: relative;
   top: 10vh;
-  left: 49vw;
+  left: 49.5vw;
   width: 350px;
   height: 40px;
   border-radius: 40px;
@@ -125,4 +125,8 @@ body {
 
 .state_err_message {
   color: red;
+}
+
+.text_center {
+  text-align: center;
 }

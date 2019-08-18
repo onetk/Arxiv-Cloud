@@ -46,6 +46,7 @@ const successHandler = function(text) {
 const errorHandler = function(error) {
   return error.message;
 };
+//  -------------------------------------------------------- //
 
 const successPaperHandler = function(text) {
   const lists = JSON.parse(text);
@@ -65,6 +66,7 @@ const successPaperHandler = function(text) {
 
   return items;
 };
+//  -------------------------------------------------------- //
 
 const successTagHandler = function(text) {
   const lists = JSON.parse(text);
@@ -72,13 +74,21 @@ const successTagHandler = function(text) {
   for (var key in lists) {
     if (lists[key] === 1) {
       // console.log(key, 1);
-      keywords.push(<div style={styles.small}>{key}</div>);
+      keywords.push(
+        <div style={styles.small} className="text_center">
+          {key}
+        </div>
+      );
     } else if (lists[key] > 2) {
       // console.log(key, 2);
-      keywords.push(<div>{key}</div>);
+      keywords.push(<div className="text_center">{key}</div>);
     } else {
       // console.log(key, 3);
-      keywords.push(<div style={styles.large}>{key}</div>);
+      keywords.push(
+        <div style={styles.large} className="text_center">
+          {key}
+        </div>
+      );
     }
   }
   // eact-tag-cloud -> https://github.com/IjzerenHein/react-tag-cloud
@@ -289,7 +299,7 @@ class App extends Component {
         <div className="app-outer">
           <div className="app-inner">
             <TagCloud
-              className="tag-cloud"
+              className="tag-cloud "
               style={{
                 fontFamily: "sans-serif",
                 //fontSize: () => Math.round(Math.random() * 50) + 16,

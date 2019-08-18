@@ -18,8 +18,8 @@ h1 {
 }
 
 .app-outer {
-  align-items: center;
-  bottom: 0;
+  /* align-items: center;
+  bottom: 0; */
   display: flex;
   flex-direction: column;
   justify-content: center;
