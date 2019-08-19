@@ -8,8 +8,8 @@
 - github: here
 
 <div align="center">
-<img src="normal.png" width="500">
-<img src="tags.png" width="500">
+<img src="normal.png" width="400">
+<img src="tags.png" width="400">
 </div>
 
 ## コア体験
