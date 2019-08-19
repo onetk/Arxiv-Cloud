@@ -116,7 +116,26 @@ function request(method, url) {
     throw new Error("5xx error");
   });
 }
-
+const tag_first = [];
+tag_first.push(
+  <div style={styles.small} className="text_center">
+    <div style={styles.large}>3D関心領域</div>
+    <div style={{ fontFamily: "courier" }}>Corelデータセット</div>
+    <div style={styles.large}>Webアノテーション</div>
+    <div style={{ fontSize: 30 }}>ゆるい注釈</div>
+    <div style={{ fontStyle: "italic" }}>アナログセグメンテーション</div>
+    <div style={{ color: "green" }}>エッジ検出セグメンテーション</div>
+    <div>テキストアノテーション</div>
+    <div>CNN</div>
+    <div>クラスタリング</div>
+    <div style={styles.small}>オープンアノテーション用</div>
+    <div style={styles.small}>テキスト注釈</div>
+    <div style={styles.small}>トピックモデル</div>
+    <div style={styles.small}>パフォーマンス</div>
+    <div>公開Webアーカイブ</div>
+    <div>医療画像処理</div>
+  </div>
+);
 class App extends Component {
   constructor() {
     super();
@@ -125,7 +144,7 @@ class App extends Component {
       message: "",
       errorMessage: "",
       token: "",
-      cloud: ""
+      cloud: tag_first
     };
   }
 
@@ -268,9 +287,9 @@ class App extends Component {
         this.setState({ user });
       }
     });
-    // setInterval(() => {
-    //   this.forceUpdate();
-    // }, 3000);
+    setInterval(() => {
+      this.forceUpdate();
+    }, 3000);
   }
 
   render(props, state) {
@@ -311,6 +330,23 @@ class App extends Component {
                 padding: 5
               }}
             >
+              <div style={styles.large}>3D関心領域</div>
+              <div style={{ fontFamily: "courier" }}>Corelデータセット</div>
+              <div style={styles.large}>Webアノテーション</div>
+              <div style={{ fontSize: 30 }}>ゆるい注釈</div>
+              <div style={{ fontStyle: "italic" }}>
+                アナログセグメンテーション
+              </div>
+              <div style={{ color: "green" }}>エッジ検出セグメンテーション</div>
+              <div>テキストアノテーション</div>
+              <div>CNN</div>
+              <div>クラスタリング</div>
+              <div style={styles.small}>オープンアノテーション用</div>
+              <div style={styles.small}>テキスト注釈</div>
+              <div style={styles.small}>トピックモデル</div>
+              <div style={styles.small}>パフォーマンス</div>
+              <div>公開Webアーカイブ</div>
+              <div>医療画像処理</div>
               {this.state.cloud}
             </TagCloud>
           </div>
