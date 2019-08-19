@@ -7,6 +7,11 @@
 - URL: none
 - github: here
 
+<div align="center">
+<img src="normal.png" width="500">
+<img src="tags.png" width="500">
+</div>
+
 ## コア体験
 
 - Arxiv にある論文を検索、自動で和訳した Abstract や抽出されたキーフレーズによるタグを表示し、より高速な論文サーベイ・タグの可視化ができる<br>
