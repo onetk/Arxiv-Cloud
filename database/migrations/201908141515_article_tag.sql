@@ -7,3 +7,6 @@ CREATE TABLE article_tag (
   PRIMARY KEY (id),
   CONSTRAINT article_tag_fk_article FOREIGN KEY (article_id) REFERENCES article (id) on delete cascade on update cascade
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- +goose Down
+DROP TABLE article_tag;
