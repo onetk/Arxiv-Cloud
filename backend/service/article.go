@@ -34,13 +34,13 @@ func NewArticleTagService(db *sqlx.DB) *ArticleTag {
 }
 
 func (a *Article) Update(id int64, newArticle *model.Article) error {
-	_, err := repository.FindArticle(a.db, id)
+	_, err := repository.FindArticleByID(a.db, id)
 	if err != nil {
 		return errors.Wrap(err, "failed find article")
 	}
 
 	if err := dbutil.TXHandler(a.db, func(tx *sqlx.Tx) error {
-		_, err := repository.UpdateArticle(tx, id, newArticle)
+		_, err := repository.UpdateArticleByID(tx, id, newArticle)
 		if err != nil {
 			return err
 		}
@@ -55,13 +55,13 @@ func (a *Article) Update(id int64, newArticle *model.Article) error {
 }
 
 func (a *Article) Destroy(id int64) error {
-	_, err := repository.FindArticle(a.db, id)
+	_, err := repository.FindArticleByID(a.db, id)
 	if err != nil {
 		return errors.Wrap(err, "failed find article")
 	}
 
 	if err := dbutil.TXHandler(a.db, func(tx *sqlx.Tx) error {
-		_, err := repository.DestroyArticle(tx, id)
+		_, err := repository.DeleteArticleByID(tx, id)
 		if err != nil {
 			return err
 		}
@@ -78,7 +78,7 @@ func (a *Article) Destroy(id int64) error {
 func (a *Article) DestroyAll() error {
 
 	if err := dbutil.TXHandler(a.db, func(tx *sqlx.Tx) error {
-		_, err := repository.DestroyAllArticle(tx)
+		_, err := repository.DeleteAllArticle(tx)
 		if err != nil {
 			return err
 		}
