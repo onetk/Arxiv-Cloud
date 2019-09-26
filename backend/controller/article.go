@@ -323,7 +323,7 @@ func (a *Article) SearchIndex(w http.ResponseWriter, r *http.Request) (int, inte
 
 	}
 
-	articles, err := repository.SearchArticle(a.dbx, tag)
+	articles, err := repository.FindArticleByTag(a.dbx, tag)
 	if err != nil && err == sql.ErrNoRows {
 		return http.StatusNotFound, nil, err
 	} else if err != nil {

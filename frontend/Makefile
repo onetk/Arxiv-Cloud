@@ -13,3 +13,6 @@ setup: __clean install
 __clean:
 	rm -rf .cache
 	rm -rf node_modules
+
+run:
+	npm start
